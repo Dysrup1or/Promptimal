@@ -391,7 +391,7 @@ class PromptimaV2:
         response = call_llm_v2(
             model=GEMINI_FAST,
             prompt=prompt,
-            max_tokens=800,
+            max_tokens=1200,  # Increased - final synthesis needs room for detailed prompt
             enforce_json=True
         )
         self.tracker.record(response, "synthesizer")

@@ -37,7 +37,7 @@ PRICES_USD = {
 MAX_TOKENS_PER_CALL = 2000  # Hard cap per LLM call
 MAX_CRITIC_ITERATIONS = 3   # Maximum refinement cycles
 EXPANDER_TOKEN_LIMIT = 350  # Strict limit for the single DeepSeek call
-DEEPSEEK_TOKEN_CAP = 1000   # v2 alias: Maximum tokens for DeepSeek call (increased - 3 variations need more)
+DEEPSEEK_TOKEN_CAP = 1500   # v2 alias: Maximum tokens for DeepSeek call (3 detailed variations)
 
 # ============================================================================
 # API KEYS
