@@ -11,8 +11,8 @@ Key differences from v1:
 import json
 from typing import Dict, Any, Optional
 
-from config import GEMINI_FAST
-from schemas import (
+from .config import GEMINI_FAST
+from .schemas import (
     SynthesizerOutput,
     ExpansionsOutput,
     RankingsOutput,
@@ -21,8 +21,8 @@ from schemas import (
     minify_json,
     validate_stage_output
 )
-from llm_wrapper import call_llm, parse_json_response
-from utils import log_event
+from .llm_wrapper import call_llm, parse_json_response
+from .utils import log_event
 
 
 # ============================================================================

@@ -11,16 +11,16 @@ Research basis:
 import json
 from typing import Dict, Any
 
-from config import GEMINI_FAST
-from schemas import (
+from .config import GEMINI_FAST
+from .schemas import (
     RubricOutput, 
     DiscernOutput, 
     ANTI_LAME_CHECKLIST, 
     minify_json,
     validate_stage_output
 )
-from llm_wrapper import call_llm, parse_json_response
-from utils import log_event
+from .llm_wrapper import call_llm, parse_json_response
+from .utils import log_event
 
 
 # ============================================================================

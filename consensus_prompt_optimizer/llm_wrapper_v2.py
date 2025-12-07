@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 from datetime import datetime
 
-from config import DEEPSEEK_CHEAP, GEMINI_FAST, DEEPSEEK_TOKEN_CAP
+from .config import DEEPSEEK_CHEAP, GEMINI_FAST, DEEPSEEK_TOKEN_CAP
 
 
 # ============================================================================

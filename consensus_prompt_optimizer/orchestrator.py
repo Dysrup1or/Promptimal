@@ -22,16 +22,18 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 
 # v2 imports
-from config import GEMINI_FAST, DEEPSEEK_CHEAP, DEEPSEEK_TOKEN_CAP
-from schemas import (
+from .config import GEMINI_FAST, DEEPSEEK_CHEAP, DEEPSEEK_TOKEN_CAP
+from .schemas import (
     DiscernOutput,
     RubricOutput,
     ExpansionsOutput,
+    ExpansionVariant,
     RankingsOutput,
+    RankerVariant,
     SynthesizerOutput,
     validate_stage_output
 )
-from llm_wrapper_v2 import (
+from .llm_wrapper_v2 import (
     call_llm_v2,
     parse_json_response_v2,
     load_from_cache,
@@ -39,7 +41,7 @@ from llm_wrapper_v2 import (
     TokenTracker,
     count_tokens
 )
-from utils import log_event
+from .utils import log_event
 
 
 # ============================================================================
@@ -264,7 +266,7 @@ class PromptimaV2:
         response = call_llm_v2(
             model=GEMINI_FAST,
             prompt=prompt,
-            max_tokens=400,
+            max_tokens=800,  # Rubric needs substantial tokens for criteria
             enforce_json=True
         )
         self.tracker.record(response, "critic_first")
@@ -290,7 +292,6 @@ class PromptimaV2:
         )
         
         if self.dry_run:
-            from schemas import ExpansionVariant
             return ExpansionsOutput(
                 A=ExpansionVariant(prompt="Prompt A", notes="concise", checklist_score="4/6"),
                 B=ExpansionVariant(prompt="Prompt B", notes="detailed", checklist_score="5/6"),
@@ -333,7 +334,6 @@ class PromptimaV2:
         )
         
         if self.dry_run:
-            from schemas import RankerVariant
             return RankingsOutput(
                 A=RankerVariant(rank=2, score=0.7),
                 B=RankerVariant(rank=3, score=0.6),

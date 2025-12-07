@@ -11,11 +11,11 @@ from typing import Dict, Any, Optional
 from pathlib import Path
 
 from crewai import Crew
-from config import DEFAULT_SEED, MAX_TOKENS_PER_CALL, GEMINI_FAST, DEEPSEEK_EXPAND
-from utils import estimate_tokens, estimate_cost_usd, set_seed, log_event
-from llm_wrapper import call_llm, parse_json_response, reset_deepseek_counter, get_deepseek_call_count
-from agents import discerner_agent, expander_agent, critic_agent, synthesizer_agent
-from tasks import create_discern_task, create_expander_task, create_critic_task, create_synthesizer_task
+from .config import DEFAULT_SEED, MAX_TOKENS_PER_CALL, GEMINI_FAST, DEEPSEEK_EXPAND
+from .utils import estimate_tokens, estimate_cost_usd, set_seed, log_event
+from .llm_wrapper import call_llm, parse_json_response, reset_deepseek_counter, get_deepseek_call_count
+from .agents import discerner_agent, expander_agent, critic_agent, synthesizer_agent
+from .tasks import create_discern_task, create_expander_task, create_critic_task, create_synthesizer_task
 
 
 def parse_args():

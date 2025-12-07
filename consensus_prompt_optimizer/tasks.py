@@ -4,7 +4,7 @@ Defines the sequential workflow for the 4 agents.
 """
 
 from crewai import Task
-from agents import (
+from .agents import (
     discerner_agent,
     expander_agent,
     critic_agent,

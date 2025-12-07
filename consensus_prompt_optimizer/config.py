@@ -12,7 +12,7 @@ load_dotenv()
 # ============================================================================
 # MODEL NAMES (LiteLLM format)
 # ============================================================================
-GEMINI_FAST = "gemini/gemini-1.5-flash"
+GEMINI_FAST = "gemini/gemini-2.0-flash"  # Updated to 2.0 (1.5 deprecated)
 DEEPSEEK_EXPAND = "deepseek/deepseek-chat"
 DEEPSEEK_CHEAP = "deepseek/deepseek-chat"  # Alias for v2 compatibility
 
@@ -21,7 +21,7 @@ DEEPSEEK_CHEAP = "deepseek/deepseek-chat"  # Alias for v2 compatibility
 # ============================================================================
 # These are approximate costs; update based on current provider pricing
 PRICES_USD = {
-    "gemini/gemini-1.5-flash": {
+    "gemini/gemini-2.0-flash": {
         "input": 0.00000000,  # Gemini Flash is free tier for now
         "output": 0.00000000,
     },
@@ -37,7 +37,7 @@ PRICES_USD = {
 MAX_TOKENS_PER_CALL = 2000  # Hard cap per LLM call
 MAX_CRITIC_ITERATIONS = 3   # Maximum refinement cycles
 EXPANDER_TOKEN_LIMIT = 350  # Strict limit for the single DeepSeek call
-DEEPSEEK_TOKEN_CAP = 350    # v2 alias: Maximum tokens for DeepSeek call
+DEEPSEEK_TOKEN_CAP = 1000   # v2 alias: Maximum tokens for DeepSeek call (increased - 3 variations need more)
 
 # ============================================================================
 # API KEYS

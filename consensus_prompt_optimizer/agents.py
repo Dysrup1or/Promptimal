@@ -4,7 +4,7 @@ Defines 4 agents: Discerner, Expander, Critic, and Synthesizer.
 """
 
 from crewai import Agent
-from config import GEMINI_FAST, DEEPSEEK_EXPAND
+from .config import GEMINI_FAST, DEEPSEEK_EXPAND
 
 
 # ============================================================================

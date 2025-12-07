@@ -5,8 +5,8 @@ LiteLLM wrapper with enforcement of single DeepSeek call policy.
 import json
 from typing import Dict, Any, Optional
 from litellm import completion
-from config import DEEPSEEK_EXPAND, MAX_TOKENS_PER_CALL, EXPANDER_TOKEN_LIMIT
-from utils import retry_with_backoff, log_event
+from .config import DEEPSEEK_EXPAND, MAX_TOKENS_PER_CALL, EXPANDER_TOKEN_LIMIT
+from .utils import retry_with_backoff, log_event
 
 
 # Global state to track DeepSeek usage

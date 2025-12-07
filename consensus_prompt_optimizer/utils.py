@@ -7,7 +7,7 @@ import time
 import json
 from typing import Any, Callable, Dict
 from functools import wraps
-from config import PRICES_USD
+from .config import PRICES_USD
 
 
 # ============================================================================

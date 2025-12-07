@@ -12,17 +12,17 @@ Key v2 changes:
 import json
 from typing import Dict, Any
 
-from config import DEEPSEEK_EXPAND, EXPANDER_TOKEN_LIMIT
-from schemas import (
+from .config import DEEPSEEK_EXPAND, EXPANDER_TOKEN_LIMIT
+from .schemas import (
     ExpansionsOutput,
     DiscernOutput,
     RubricOutput,
     minify_json,
     validate_stage_output
 )
-from llm_wrapper import call_llm, parse_json_response
-from critic_first import format_rubric_for_expander
-from utils import log_event
+from .llm_wrapper import call_llm, parse_json_response
+from .critic_first import format_rubric_for_expander
+from .utils import log_event
 
 
 # ============================================================================
