@@ -200,16 +200,23 @@ def call_llm_v2(
     
     # Add JSON mode hint if requested
     if enforce_json:
-        messages[0]["content"] += "\n\n[RESPOND ONLY WITH VALID JSON]"
+        messages[0]["content"] += "\n\n[IMPORTANT: Your response MUST be valid JSON only. No text before or after the JSON object. Start with { and end with }]"
+    
+    # Build API call kwargs
+    api_kwargs = {
+        "model": model,
+        "messages": messages,
+        "max_tokens": max_tokens,
+        "temperature": temperature
+    }
+    
+    # Add response_format for JSON mode (supported by Gemini and newer models)
+    if enforce_json:
+        api_kwargs["response_format"] = {"type": "json_object"}
     
     # Make API call
     try:
-        response = litellm.completion(
-            model=model,
-            messages=messages,
-            max_tokens=max_tokens,
-            temperature=temperature
-        )
+        response = litellm.completion(**api_kwargs)
         
         content = response.choices[0].message.content
         output_tokens = count_tokens(content, model)
@@ -245,6 +252,7 @@ def parse_json_response_v2(content: str) -> Dict[str, Any]:
     - Leading/trailing whitespace
     - Single quotes instead of double quotes
     - Trailing commas
+    - Text before/after JSON object
     """
     import re
     
@@ -257,6 +265,13 @@ def parse_json_response_v2(content: str) -> Dict[str, Any]:
         match = re.search(r'```(?:json)?\s*([\s\S]*?)```', content)
         if match:
             content = match.group(1).strip()
+    
+    # If content doesn't start with {, try to find JSON object in the text
+    if not content.startswith("{"):
+        # Look for JSON object anywhere in the response
+        match = re.search(r'\{[\s\S]*\}', content)
+        if match:
+            content = match.group()
     
     # Try direct parse first
     try:
