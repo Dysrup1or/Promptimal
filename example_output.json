@@ -1,0 +1,78 @@
+{
+    "input": "I want a prompt that writes persuasive landing pages for indie SaaS products.",
+    "discern": {
+        "intent": "Generate persuasive landing page copy that converts visitors into customers for indie SaaS products",
+        "audience": "Indie SaaS founders, marketing teams, and copywriters who need to create compelling landing pages",
+        "constraints": [
+            "Must be persuasive and conversion-focused",
+            "Targeted at indie/bootstrapped SaaS businesses (not enterprise)",
+            "Should produce landing page copy (not full website)",
+            "Must understand SaaS-specific value propositions"
+        ],
+        "success_criteria": "Landing page copy that clearly communicates value proposition, addresses pain points, and includes strong calls-to-action",
+        "ambiguous": [
+            "What sections of the landing page should be included? (hero, features, pricing, testimonials, etc.)",
+            "What tone/voice is preferred? (professional, casual, technical, friendly)",
+            "Should it include specific frameworks like PAS (Problem-Agitate-Solution) or AIDA?"
+        ]
+    },
+    "expansions": {
+        "A": {
+            "prompt": "You are an expert SaaS copywriter. Write persuasive landing page copy for an indie SaaS product. Include: headline, subheadline, value proposition, 3 key features, social proof section, and a strong call-to-action. Make it conversion-focused and clearly communicate the product's unique benefits.",
+            "notes": "Direct role-based approach with clear structural requirements",
+            "token_est": 180
+        },
+        "B": {
+            "prompt": "You are an expert SaaS copywriter. Write persuasive landing page copy for an indie SaaS product. Think step-by-step: First, identify the target customer's main pain point. Second, craft a compelling headline that addresses this pain. Third, develop a value proposition that shows the solution. Fourth, list 3 concrete benefits with examples. Fifth, add credibility elements. Finally, create an urgent call-to-action. Use the AIDA framework (Attention, Interest, Desire, Action) throughout.",
+            "notes": "Chain-of-thought with explicit reasoning steps and framework guidance",
+            "token_est": 220
+        },
+        "C": {
+            "prompt": "You are a veteran SaaS marketing copywriter with 10+ years of experience writing high-converting landing pages for bootstrapped startups. Write persuasive landing page copy for an indie SaaS product. Requirements: 1) Provide sources or examples for any statistics or claims you make. 2) Use stepwise reasoning to structure your copy logically. 3) If you cannot verify a specific claim or best practice, explicitly say 'I don't know' rather than making assumptions. Output your response in JSON format with fields: {headline, subheadline, value_proposition, features: [], social_proof, cta, reasoning}.",
+            "notes": "Role-immersive with anti-hallucination guardrails and structured output",
+            "token_est": 280
+        }
+    },
+    "critic": {
+        "A": {
+            "issues": [
+                "Lacks explicit anti-hallucination safeguards",
+                "No structured output format specified",
+                "Could be more specific about tone and style"
+            ],
+            "rank": 3
+        },
+        "B": {
+            "issues": [
+                "No anti-hallucination guardrails",
+                "AIDA framework mentioned but not strictly enforced",
+                "Missing structured output requirement"
+            ],
+            "rank": 2
+        },
+        "C": {
+            "issues": [
+                "Could specify more about the indie SaaS context (bootstrapped, specific pain points)"
+            ],
+            "rank": 1
+        }
+    },
+    "final": {
+        "golden_prompt": "You are a veteran SaaS marketing copywriter with 10+ years of experience creating high-converting landing pages for bootstrapped indie SaaS startups. Your task is to write persuasive landing page copy.\n\nContext: You're writing for indie SaaS products (typically bootstrapped, targeting SMBs or individual users, solving specific pain points with focused solutions).\n\nApproach:\n1. Think step-by-step: First identify the target customer's primary pain point, then craft solutions that address it directly.\n2. Use the AIDA framework (Attention, Interest, Desire, Action) to structure your copy.\n3. Provide sources, examples, or references for any statistics, best practices, or industry claims you make.\n4. If you cannot verify a fact or claim, explicitly state \"I don't know\" rather than making assumptions.\n5. Use stepwise reasoning to ensure logical flow from problem to solution to action.\n\nIMPORTANT: You must output your response in strict JSON format with the following structure:\n{\n  \"headline\": \"<attention-grabbing headline>\",\n  \"subheadline\": \"<supporting subheadline>\",\n  \"value_proposition\": \"<clear statement of unique value>\",\n  \"features\": [\n    {\"title\": \"<feature name>\", \"description\": \"<benefit-focused description>\", \"example\": \"<concrete example>\"}\n  ],\n  \"social_proof\": \"<testimonial or credibility element>\",\n  \"cta\": \"<compelling call-to-action>\",\n  \"reasoning\": \"<your step-by-step thought process>\"\n}\n\nRemember: If you cannot verify a fact, say \"I don't know.\" Provide sources for claims. Output ONLY valid JSON.",
+        "rationale": "This golden prompt combines the best elements from all three variations: the role-based clarity of A, the step-by-step reasoning framework from B, and the anti-hallucination guardrails and structured output from C. It adds specific context about indie SaaS (bootstrapped, SMB-focused) to address the identified ambiguities. The prompt enforces verification of claims, explicit handling of uncertainty, and structured JSON output for downstream processing. It maintains conciseness while including all mandatory safety guardrails.",
+        "token_est": 320,
+        "cost_est_usd": 0.0
+    },
+    "meta": {
+        "seed": 42,
+        "duration_s": 12.5,
+        "models_used": [
+            "gemini/gemini-1.5-flash",
+            "deepseek/deepseek-chat",
+            "gemini/gemini-1.5-flash",
+            "gemini/gemini-1.5-flash"
+        ],
+        "deepseek_calls": 1,
+        "total_cost_estimate_usd": 0.042
+    }
+}
