@@ -288,6 +288,14 @@ def parse_json_response_v2(content: str) -> Dict[str, Any]:
     except json.JSONDecodeError:
         pass
     
+    # Check if response appears truncated (no closing brace)
+    if content.count('{') > content.count('}'):
+        raise ValueError(
+            f"Response appears truncated (token limit may be too low). "
+            f"Open braces: {content.count('{')}, Close braces: {content.count('}')}. "
+            f"Consider increasing DEEPSEEK_TOKEN_CAP. Preview: {content[:150]}..."
+        )
+    
     # Failed to parse
     raise ValueError(f"Failed to parse JSON from response: {content[:200]}...")
 
