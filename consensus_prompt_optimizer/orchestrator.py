@@ -239,7 +239,7 @@ class PromptimaV2:
         response = call_llm_v2(
             model=GEMINI_FAST,
             prompt=prompt,
-            max_tokens=300,
+            max_tokens=500,  # Increased for detailed analysis
             enforce_json=True
         )
         self.tracker.record(response, "discerner")
@@ -266,7 +266,7 @@ class PromptimaV2:
         response = call_llm_v2(
             model=GEMINI_FAST,
             prompt=prompt,
-            max_tokens=800,  # Rubric needs substantial tokens for criteria
+            max_tokens=1200,  # Generous for detailed rubrics
             enforce_json=True
         )
         self.tracker.record(response, "critic_first")
@@ -391,7 +391,7 @@ class PromptimaV2:
         response = call_llm_v2(
             model=GEMINI_FAST,
             prompt=prompt,
-            max_tokens=1500,  # Increased for complex multi-integration prompts
+            max_tokens=2000,  # Generous for complex final prompts
             enforce_json=True
         )
         self.tracker.record(response, "synthesizer")
