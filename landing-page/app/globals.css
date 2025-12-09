@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import Clash Display from Fontshare CDN */
+@import url('https://api.fontshare.com/v2/css?f[]=clash-display@600,700&display=swap');
+
+:root {
+  --font-clash: 'Clash Display', sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-black text-white font-mono antialiased;
+    background-image: 
+      linear-gradient(rgba(26, 26, 26, 0.5) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(26, 26, 26, 0.5) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: -1px -1px;
+  }
+  
+  * {
+    @apply border-gray-800;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-electric-cyan to-neon-magenta bg-clip-text text-transparent;
+  }
+  
+  .bg-grid-pattern {
+    background-image: 
+      linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .clip-diagonal {
+    clip-path: polygon(0 0, 100% 5%, 100% 100%, 0 95%);
+  }
+}

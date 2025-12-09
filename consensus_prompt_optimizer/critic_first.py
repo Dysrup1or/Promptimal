@@ -1,5 +1,5 @@
 """
-CriticFirst stage for Promptimal v2 - Judge-then-Generate workflow.
+CriticFirst stage for Promptly v2 - Judge-then-Generate workflow.
 Generates rubric, checklist, and red flags BEFORE expansion.
 This is the key innovation: critique upfront guides better generation.
 

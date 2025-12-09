@@ -1,5 +1,5 @@
 """
-Ranker stage for Promptimal v2 - Lightweight ranking of variations.
+Ranker stage for Promptly v2 - Lightweight ranking of variations.
 Replaces the heavier Critic stage from v1.
 
 Key differences from v1 Critic:

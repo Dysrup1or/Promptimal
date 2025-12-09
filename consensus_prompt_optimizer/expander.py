@@ -1,5 +1,5 @@
 """
-Expander stage for Promptimal v2 - Rubric-guided prompt generation.
+Expander stage for Promptly v2 - Rubric-guided prompt generation.
 Uses DeepSeek (THE ONLY DeepSeek call) with rubric injection.
 
 Key v2 changes:

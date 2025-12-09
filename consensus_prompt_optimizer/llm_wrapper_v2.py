@@ -1,5 +1,5 @@
 """
-LLM Wrapper v2 for Promptimal - Enhanced with caching, compression, JSON mode.
+LLM Wrapper v2 for Promptly - Enhanced with caching, compression, JSON mode.
 
 Key v2 enhancements:
 - SHA-256 idea hash caching (avoid re-running identical ideas)

@@ -1,5 +1,5 @@
 """
-Synthesizer stage for Promptimal v2 - Final prompt synthesis.
+Synthesizer stage for Promptly v2 - Final prompt synthesis.
 Combines best elements from ranked variations with rubric compliance.
 
 Key differences from v1:

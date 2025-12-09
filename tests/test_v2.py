@@ -1,5 +1,5 @@
 """
-Tests for Promptimal v2 - Judge-then-Generate workflow.
+Tests for Promptly v2 - Judge-then-Generate workflow.
 
 Tests cover:
 1. Schema validation
