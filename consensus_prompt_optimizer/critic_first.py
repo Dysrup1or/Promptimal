@@ -26,7 +26,12 @@ from .utils import log_event
 # ============================================================================
 # CRITIC-FIRST PROMPT TEMPLATE
 # ============================================================================
-CRITIC_FIRST_PROMPT = """You are a prompt engineering quality expert. Your task is to create a RUBRIC that will guide the generation of high-quality prompt variations.
+CRITIC_FIRST_PROMPT = """[IDENTITY: Prompt Quality Rubric Agent]
+TASK: Generate evaluation criteria for PROMPTS, not for their outputs.
+META-RULE: Your rubric guides prompt generation, not content execution.
+---
+
+You are a prompt engineering quality expert. Your task is to create a RUBRIC that will guide the generation of high-quality prompt variations.
 
 ANALYZED IDEA:
 {discern_json}

@@ -130,6 +130,42 @@ Every golden prompt includes mandatory guardrails:
 - Explicit instruction: **"If you cannot verify a fact, say 'I don't know'."**
 - Structured JSON output format enforcement
 
+## Focus-Retention Guardrails (v2.1)
+
+The pipeline includes three layers of protection against **execution creep** (when complex user inputs cause the system to execute instructions instead of optimizing them into prompts):
+
+### 1. Identity Assertions
+Each pipeline stage has an explicit identity block that prevents role drift:
+```
+[IDENTITY: Prompt Expansion Agent]
+TASK: Create three PROMPT variations—not implementations.
+META-RULE: The user's idea describes what a FUTURE LLM should do. You REFINE
+those instructions into better prompts. You do NOT execute them yourself.
+CREATIVITY: Full freedom in style (role-based, CoT, structured, conversational).
+```
+
+### 2. Execution Creep Checks
+Expander and Synthesizer stages include negative examples that clarify the distinction:
+```
+EXECUTION CREEP CHECK:
+Example input: "Create a landing page with testimonials"
+  ❌ WRONG: Output HTML/React code for a landing page
+  ✅ RIGHT: Output a PROMPT like "You are a copywriter. Write landing page copy..."
+```
+
+### 3. Constraint Repositioning
+Critical constraints are positioned at the **start** and **end** of prompts (avoiding the "lost in the middle" effect where LLMs forget central instructions):
+- MANDATORY/CRITICAL rules moved to immediately after identity block
+- FINAL CHECK assertion before JSON output schema
+
+### Creativity Preservation
+These guardrails explicitly **allow**:
+- All action verbs: generate, create, produce, build, write, craft, develop, construct, design
+- All prompt styles: role-based, chain-of-thought, few-shot, structured, conversational
+- Full creative latitude in prompt engineering techniques
+
+Research basis: arXiv 2402.01822 (Building Guardrails for LLMs), arXiv 2502.04362 (Lost in the Middle effect)
+
 ## Architecture
 
 ```

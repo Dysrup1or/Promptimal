@@ -48,7 +48,12 @@ from .utils import log_event
 # STAGE PROMPTS
 # ============================================================================
 
-DISCERNER_PROMPT = """Analyze this prompt idea and identify key characteristics:
+DISCERNER_PROMPT = """[IDENTITY: Prompt Analysis Agent]
+TASK: Analyze the user's idea to extract intent, audience, and constraints.
+META-RULE: You analyze WHAT the user wants a prompt to do—you don't do it yourself.
+---
+
+Analyze this prompt idea and identify key characteristics:
 
 IDEA: {idea}
 
@@ -63,7 +68,12 @@ Respond with ONLY valid JSON:
 }}"""
 
 
-CRITIC_FIRST_PROMPT = """You are a prompt quality expert. Generate a rubric for evaluating prompts for this task.
+CRITIC_FIRST_PROMPT = """[IDENTITY: Prompt Quality Rubric Agent]
+TASK: Generate evaluation criteria for PROMPTS, not for their outputs.
+META-RULE: Your rubric guides prompt generation, not content execution.
+---
+
+You are a prompt quality expert. Generate a rubric for evaluating prompts for this task.
 
 TASK ANALYSIS:
 {discern_json}
@@ -94,7 +104,17 @@ Respond with ONLY valid JSON:
 Include 3-5 rubric criteria, 6-10 checklist items, 3-5 red flags."""
 
 
-EXPANDER_PROMPT = """Generate 3 distinct prompt variations for this task.
+EXPANDER_PROMPT = """[IDENTITY: Prompt Expansion Agent]
+TASK: Create three PROMPT variations—not implementations.
+META-RULE: The user's idea describes what a FUTURE LLM should do. You REFINE
+those instructions into better prompts. You do NOT execute them yourself.
+CREATIVITY: Full freedom in style (role-based, CoT, structured, conversational).
+Vary tone, format, and technique across variations A/B/C.
+---
+
+CRITICAL: Each prompt must be complete and standalone. Include anti-hallucination guardrails.
+
+Generate 3 distinct prompt variations for this task.
 
 ORIGINAL IDEA:
 {idea}
@@ -113,17 +133,34 @@ RED FLAGS (AVOID THESE):
 
 Generate 3 variations with different approaches (concise/detailed/structured).
 
+---
+EXECUTION CREEP CHECK:
+Example input: "Create a landing page with testimonials"
+  X WRONG: Output HTML/React code for a landing page
+  V RIGHT: Output a PROMPT like "You are a copywriter. Write landing page copy..."
+
+Example input: "Build a Python script that parses logs"
+  X WRONG: Output Python code with argparse
+  V RIGHT: Output a PROMPT like "You are a Python developer. Generate a script..."
+
+YOUR OUTPUT = A prompt that instructs, not content that executes.
+---
+
+FINAL CHECK: Each variation is a META-PROMPT, not an implementation.
+
 Respond with ONLY valid JSON:
 {{
   "A": {{"prompt": "<variation A>", "notes": "<approach notes>", "checklist_score": "<X/Y items addressed>"}},
   "B": {{"prompt": "<variation B>", "notes": "<approach notes>", "checklist_score": "<X/Y items addressed>"}},
   "C": {{"prompt": "<variation C>", "notes": "<approach notes>", "checklist_score": "<X/Y items addressed>"}}
-}}
-
-CRITICAL: Each prompt must be complete and standalone. Include anti-hallucination guardrails."""
+}}"""
 
 
-RANKER_PROMPT = """Rank these prompt variations based on quality.
+RANKER_PROMPT = """[IDENTITY: Prompt Ranking Agent]
+TASK: Rank prompt variations by quality—not by what they would generate.
+---
+
+Rank these prompt variations based on quality.
 
 RUBRIC CRITERIA:
 {rubric_summary}
@@ -143,7 +180,13 @@ Respond with ONLY valid JSON:
 Ranks must be UNIQUE (1, 2, 3 each used exactly once)."""
 
 
-SYNTHESIZER_PROMPT = """Create the FINAL optimized prompt by synthesizing the best elements.
+SYNTHESIZER_PROMPT = """[IDENTITY: Prompt Synthesis Agent]
+TASK: Merge the best elements into ONE optimized PROMPT.
+META-RULE: Your output is a refined PROMPT, not the content it would generate.
+CREATIVITY: Combine techniques freely. The final prompt should exceed any single variation.
+---
+
+Create the FINAL optimized prompt by synthesizing the best elements.
 
 ORIGINAL IDEA:
 {idea}
@@ -153,6 +196,17 @@ RUBRIC:
 
 RANKED VARIATIONS (Best → Worst):
 {ranked_variations}
+
+---
+EXECUTION CREEP CHECK:
+Example: If user wants "a script that automates deployments"
+  X WRONG: Output actual deployment code
+  V RIGHT: Output a PROMPT that instructs an LLM to generate deployment code
+
+YOUR OUTPUT = A refined prompt, not generated content.
+---
+
+FINAL CHECK: final_prompt contains a prompt, not generated content.
 
 Respond with ONLY valid JSON:
 {{

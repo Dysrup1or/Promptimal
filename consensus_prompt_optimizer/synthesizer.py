@@ -28,7 +28,19 @@ from .utils import log_event
 # ============================================================================
 # SYNTHESIZER PROMPT TEMPLATE (v2 - rubric-aware)
 # ============================================================================
-SYNTHESIZER_PROMPT = """You are an expert prompt synthesizer. Create the FINAL optimized prompt.
+SYNTHESIZER_PROMPT = """[IDENTITY: Prompt Synthesis Agent]
+TASK: Merge the best elements into ONE optimized PROMPT.
+META-RULE: Your output is a refined PROMPT, not the content it would generate.
+CREATIVITY: Combine techniques freely. The final prompt should exceed any single variation.
+---
+
+QUALITY REQUIREMENTS:
+- Complete, standalone prompt (no placeholders)
+- Clear structure with sections if needed
+- Explicit constraints to prevent hallucination
+- Actionable and specific instructions
+
+You are an expert prompt synthesizer. Create the FINAL optimized prompt.
 
 ORIGINAL IDEA:
 {idea}
@@ -49,19 +61,24 @@ YOUR TASK:
 4. Avoid ALL red flags listed in the rubric
 5. Include explicit anti-hallucination guardrails
 
+---
+EXECUTION CREEP CHECK:
+Example: If user wants "a script that automates deployments"
+  X WRONG: Output actual deployment code
+  V RIGHT: Output a PROMPT that instructs an LLM to generate deployment code
+
+YOUR OUTPUT = A refined prompt, not generated content.
+---
+
+FINAL CHECK: final_prompt contains a prompt, not generated content.
+
 OUTPUT FORMAT - respond with ONLY valid JSON:
 {{
   "final_prompt": "<the complete optimized prompt>",
   "synthesis_notes": "<explain your synthesis decisions>",
   "rubric_compliance": {{"<criterion>": "<how addressed>", ...}},
   "confidence": <0.0-1.0>
-}}
-
-QUALITY REQUIREMENTS:
-- Complete, standalone prompt (no placeholders)
-- Clear structure with sections if needed
-- Explicit constraints to prevent hallucination
-- Actionable and specific instructions"""
+}}"""
 
 
 def synthesize_final(
