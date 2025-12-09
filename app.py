@@ -38,48 +38,54 @@ st.set_page_config(
 
 
 # ============================================================================
-# CUSTOM CSS - Dark Theme with Gradient Accents
+# CUSTOM CSS - Neo-Brutalist Dark Theme with Cyan Accents
 # ============================================================================
 st.markdown("""
 <style>
-    /* Main dark theme */
+    /* Import fonts */
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+    
+    /* Main dark theme - Pure Black */
     .stApp {
-        background-color: #0d1117;
+        background-color: #000000;
+        font-family: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
     }
     
-    /* Sidebar styling */
+    /* Sidebar styling - Dark charcoal */
     [data-testid="stSidebar"] {
-        background-color: #161b22;
-        border-right: 1px solid #30363d;
+        background-color: #0A0A0A;
+        border-right: 1px solid rgba(0, 240, 255, 0.1);
     }
     
     [data-testid="stSidebar"] .stMarkdown {
         color: #c9d1d9;
     }
     
-    /* Header with gradient */
+    /* Header with cyan glow */
     .main-header {
-        font-size: 1.8rem;
+        font-size: 2.5rem;
         font-weight: 700;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: #00F0FF;
+        text-shadow: 0 0 30px rgba(0, 240, 255, 0.5), 0 0 60px rgba(0, 240, 255, 0.3);
         margin-bottom: 0;
         padding: 0;
+        font-family: 'JetBrains Mono', monospace;
+        letter-spacing: 2px;
     }
     
     .sub-header {
         font-size: 0.95rem;
-        color: #8b949e;
+        color: #718096;
         margin-top: 4px;
         margin-bottom: 20px;
+        font-family: 'JetBrains Mono', monospace;
     }
     
     /* Card styling for output */
     .output-card {
-        background: linear-gradient(145deg, #1c2128 0%, #21262d 100%);
-        border: 1px solid #30363d;
-        border-radius: 12px;
+        background: #0A0A0A;
+        border: 1px solid rgba(0, 240, 255, 0.2);
+        border-radius: 8px;
         padding: 24px;
         margin: 16px 0;
     }
@@ -90,13 +96,13 @@ st.markdown("""
         align-items: center;
         margin-bottom: 16px;
         padding-bottom: 12px;
-        border-bottom: 1px solid #30363d;
+        border-bottom: 1px solid rgba(0, 240, 255, 0.1);
     }
     
     .output-card-title {
         font-size: 1.25rem;
         font-weight: 600;
-        color: #f0f6fc;
+        color: #00F0FF;
         margin: 0;
     }
     
@@ -106,70 +112,93 @@ st.markdown("""
     }
     
     .action-btn {
-        background: #21262d;
-        border: 1px solid #30363d;
-        color: #c9d1d9;
+        background: transparent;
+        border: 1px solid rgba(0, 240, 255, 0.3);
+        color: #00F0FF;
         padding: 6px 12px;
-        border-radius: 6px;
+        border-radius: 4px;
         font-size: 0.85rem;
         cursor: pointer;
         transition: all 0.2s;
+        font-family: 'JetBrains Mono', monospace;
     }
     
     .action-btn:hover {
-        background: #30363d;
-        border-color: #8b949e;
+        background: rgba(0, 240, 255, 0.1);
+        border-color: #00F0FF;
+        box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
     }
     
     /* Prompt output text area */
     .prompt-output {
-        background-color: #0d1117;
-        color: #e6edf3;
+        background-color: #000000;
+        color: #F8F8F8;
         padding: 20px;
         border-radius: 8px;
-        font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+        font-family: 'JetBrains Mono', monospace;
         font-size: 0.9rem;
         white-space: pre-wrap;
         line-height: 1.7;
-        border: 1px solid #30363d;
+        border: 1px solid rgba(0, 240, 255, 0.2);
     }
     
     /* Input field styling */
     .stTextArea textarea {
-        background-color: #0d1117 !important;
-        border: 2px solid #30363d !important;
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
         border-radius: 8px !important;
-        color: #e6edf3 !important;
+        color: #FFFFFF !important;
         font-size: 0.95rem !important;
+        font-family: 'JetBrains Mono', monospace !important;
     }
     
     .stTextArea textarea:focus {
-        border-color: #667eea !important;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15) !important;
+        border-color: #00F0FF !important;
+        box-shadow: 0 0 20px rgba(0, 240, 255, 0.2) !important;
     }
     
-    /* Primary button with gradient */
+    /* Primary button with cyan gradient */
     .stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        background: #00F0FF !important;
+        color: #000000 !important;
         border: none !important;
-        border-radius: 8px !important;
+        border-radius: 4px !important;
         padding: 12px 24px !important;
-        font-weight: 600 !important;
+        font-weight: 700 !important;
         font-size: 0.95rem !important;
+        font-family: 'JetBrains Mono', monospace !important;
         transition: all 0.3s ease !important;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+        box-shadow: 0 0 20px rgba(0, 240, 255, 0.4) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
     }
     
     .stButton > button[kind="primary"]:hover {
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5) !important;
-        transform: translateY(-1px) !important;
+        background: #FFFFFF !important;
+        box-shadow: 0 0 30px rgba(0, 240, 255, 0.6) !important;
+        transform: translateY(-2px) !important;
+    }
+    
+    /* Secondary buttons */
+    .stButton > button {
+        background: transparent !important;
+        color: #00F0FF !important;
+        border: 1px solid rgba(0, 240, 255, 0.3) !important;
+        border-radius: 4px !important;
+        font-family: 'JetBrains Mono', monospace !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    .stButton > button:hover {
+        background: rgba(0, 240, 255, 0.1) !important;
+        border-color: #00F0FF !important;
     }
     
     /* Metrics styling */
     .metric-card {
-        background: linear-gradient(145deg, #1c2128 0%, #21262d 100%);
-        border: 1px solid #30363d;
-        border-radius: 10px;
+        background: #0A0A0A;
+        border: 1px solid rgba(0, 240, 255, 0.2);
+        border-radius: 8px;
         padding: 16px;
         text-align: center;
     }
@@ -177,42 +206,47 @@ st.markdown("""
     .metric-value {
         font-size: 1.5rem;
         font-weight: 700;
-        color: #58a6ff;
+        color: #00F0FF;
+        text-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
     }
     
     .metric-label {
         font-size: 0.8rem;
-        color: #8b949e;
+        color: #718096;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 1px;
+        font-family: 'JetBrains Mono', monospace;
     }
     
     /* Tab styling */
     .stTabs [data-baseweb="tab-list"] {
-        background-color: #161b22;
-        border-radius: 8px;
+        background-color: #0A0A0A;
+        border-radius: 4px;
         padding: 4px;
         gap: 4px;
+        border: 1px solid rgba(0, 240, 255, 0.1);
     }
     
     .stTabs [data-baseweb="tab"] {
         background-color: transparent;
-        color: #8b949e;
-        border-radius: 6px;
+        color: #718096;
+        border-radius: 4px;
         padding: 8px 16px;
+        font-family: 'JetBrains Mono', monospace;
     }
     
     .stTabs [aria-selected="true"] {
-        background-color: #21262d;
-        color: #f0f6fc;
+        background-color: rgba(0, 240, 255, 0.1);
+        color: #00F0FF;
     }
     
     /* Expander styling */
     .streamlit-expanderHeader {
-        background-color: #161b22;
-        border: 1px solid #30363d;
-        border-radius: 8px;
+        background-color: #0A0A0A;
+        border: 1px solid rgba(0, 240, 255, 0.2);
+        border-radius: 4px;
         color: #c9d1d9;
+        font-family: 'JetBrains Mono', monospace;
     }
     
     /* Connected status badge */
@@ -221,48 +255,53 @@ st.markdown("""
         align-items: center;
         gap: 6px;
         padding: 4px 10px;
-        border-radius: 12px;
+        border-radius: 4px;
         font-size: 0.8rem;
         font-weight: 500;
+        font-family: 'JetBrains Mono', monospace;
     }
     
     .status-connected {
-        background-color: rgba(46, 160, 67, 0.15);
-        color: #3fb950;
-        border: 1px solid rgba(46, 160, 67, 0.4);
+        background-color: rgba(0, 240, 255, 0.1);
+        color: #00F0FF;
+        border: 1px solid rgba(0, 240, 255, 0.3);
     }
     
     .status-disconnected {
-        background-color: rgba(248, 81, 73, 0.15);
-        color: #f85149;
-        border: 1px solid rgba(248, 81, 73, 0.4);
+        background-color: rgba(255, 0, 255, 0.1);
+        color: #FF00FF;
+        border: 1px solid rgba(255, 0, 255, 0.3);
     }
     
     /* Divider */
     hr {
-        border-color: #30363d;
+        border-color: rgba(0, 240, 255, 0.1);
         margin: 20px 0;
     }
     
     /* Section headers in sidebar */
     .sidebar-section {
-        color: #f0f6fc;
+        color: #FFFFFF;
         font-size: 0.9rem;
         font-weight: 600;
         margin-bottom: 8px;
         display: flex;
         align-items: center;
         gap: 8px;
+        font-family: 'JetBrains Mono', monospace;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
     
     /* Footer */
     .footer {
         text-align: center;
-        color: #8b949e;
+        color: #718096;
         font-size: 0.85rem;
         padding: 20px;
-        border-top: 1px solid #30363d;
+        border-top: 1px solid rgba(0, 240, 255, 0.1);
         margin-top: 40px;
+        font-family: 'JetBrains Mono', monospace;
     }
     
     /* Hide Streamlit branding */
@@ -274,9 +313,9 @@ st.markdown("""
         max-width: 400px;
         margin: 60px auto;
         padding: 40px;
-        background: linear-gradient(145deg, #1c2128 0%, #21262d 100%);
-        border: 1px solid #30363d;
-        border-radius: 16px;
+        background: #0A0A0A;
+        border: 1px solid rgba(0, 240, 255, 0.2);
+        border-radius: 8px;
     }
     
     .auth-header {
@@ -287,15 +326,16 @@ st.markdown("""
     .auth-title {
         font-size: 1.5rem;
         font-weight: 700;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: #00F0FF;
+        text-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+        font-family: 'JetBrains Mono', monospace;
         margin-bottom: 8px;
     }
     
     .auth-subtitle {
-        color: #8b949e;
+        color: #718096;
         font-size: 0.9rem;
+        font-family: 'JetBrains Mono', monospace;
     }
     
     .tier-badge {
@@ -305,21 +345,51 @@ st.markdown("""
         font-size: 0.7rem;
         font-weight: 600;
         text-transform: uppercase;
+        font-family: 'JetBrains Mono', monospace;
     }
     
     .tier-free {
-        background: rgba(139, 148, 158, 0.2);
-        color: #8b949e;
+        background: rgba(0, 240, 255, 0.1);
+        color: #00F0FF;
+        border: 1px solid rgba(0, 240, 255, 0.3);
     }
     
     .tier-pro {
-        background: rgba(102, 126, 234, 0.2);
-        color: #667eea;
+        background: rgba(255, 0, 255, 0.1);
+        color: #FF00FF;
+        border: 1px solid rgba(255, 0, 255, 0.3);
     }
     
     .tier-enterprise {
-        background: rgba(240, 147, 251, 0.2);
-        color: #f093fb;
+        background: rgba(0, 240, 255, 0.2);
+        color: #00F0FF;
+        border: 1px solid rgba(0, 240, 255, 0.5);
+    }
+    
+    /* Circuit board background pattern */
+    .stApp::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: 
+            linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+    }
+    
+    /* Branding text */
+    .dysruption-brand {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        color: #718096;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 20px;
     }
 </style>
 """, unsafe_allow_html=True)
