@@ -61,16 +61,17 @@ st.markdown("""
         color: #c9d1d9;
     }
     
-    /* Header with cyan glow */
+    /* Header with cyan glow - LARGE CENTERED */
     .main-header {
-        font-size: 2.5rem;
+        font-size: 4rem;
         font-weight: 700;
         color: #00F0FF;
-        text-shadow: 0 0 30px rgba(0, 240, 255, 0.5), 0 0 60px rgba(0, 240, 255, 0.3);
+        text-shadow: 0 0 40px rgba(0, 240, 255, 0.6), 0 0 80px rgba(0, 240, 255, 0.4), 0 0 120px rgba(0, 240, 255, 0.2);
         margin-bottom: 0;
-        padding: 0;
+        padding: 40px 0 20px 0;
         font-family: 'JetBrains Mono', monospace;
-        letter-spacing: 2px;
+        letter-spacing: 8px;
+        text-align: center;
     }
     
     .sub-header {
@@ -79,6 +80,7 @@ st.markdown("""
         margin-top: 4px;
         margin-bottom: 20px;
         font-family: 'JetBrains Mono', monospace;
+        text-align: center;
     }
     
     /* Card styling for output */
@@ -157,26 +159,26 @@ st.markdown("""
         box-shadow: 0 0 20px rgba(0, 240, 255, 0.2) !important;
     }
     
-    /* Primary button with cyan gradient */
+    /* Primary button with cyan - LARGE */
     .stButton > button[kind="primary"] {
         background: #00F0FF !important;
         color: #000000 !important;
         border: none !important;
         border-radius: 4px !important;
-        padding: 12px 24px !important;
+        padding: 16px 32px !important;
         font-weight: 700 !important;
-        font-size: 0.95rem !important;
+        font-size: 1.1rem !important;
         font-family: 'JetBrains Mono', monospace !important;
         transition: all 0.3s ease !important;
-        box-shadow: 0 0 20px rgba(0, 240, 255, 0.4) !important;
+        box-shadow: 0 0 30px rgba(0, 240, 255, 0.5) !important;
         text-transform: uppercase !important;
-        letter-spacing: 1px !important;
+        letter-spacing: 2px !important;
     }
     
     .stButton > button[kind="primary"]:hover {
         background: #FFFFFF !important;
-        box-shadow: 0 0 30px rgba(0, 240, 255, 0.6) !important;
-        transform: translateY(-2px) !important;
+        box-shadow: 0 0 50px rgba(0, 240, 255, 0.8) !important;
+        transform: translateY(-3px) !important;
     }
     
     /* Secondary buttons */
@@ -594,8 +596,14 @@ usage_limit = usage_service.get_limit_for_tier(current_user.tier)
 
 
 # ============================================================================
-# SIDEBAR - CONFIGURATION
+# SIDEBAR - MINIMAL DESIGN
 # ============================================================================
+
+# Default configuration (no UI clutter)
+use_cache = True
+dry_run = False
+show_details = False
+
 with st.sidebar:
     # Logo/Brand
     st.markdown("### ⚡ Promptly")
@@ -603,103 +611,23 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # User Profile Section
-    tier_class = f"tier-{current_user.tier}"
+    # User - Just name
     st.markdown(f"👤 **{current_user.full_name}**")
-    st.markdown(f'<span style="color: #8b949e; font-size: 0.8rem;">{current_user.email}</span>', unsafe_allow_html=True)
     
-    # Email verification status
-    if current_user.email_verified:
-        st.markdown(f'<span style="color: #3fb950; font-size: 0.75rem;">✓ Email verified</span>', unsafe_allow_html=True)
-    else:
-        st.markdown(f'<span style="color: #d29922; font-size: 0.75rem;">⚠ Email not verified</span>', unsafe_allow_html=True)
-        if st.button("📧 Resend verification", use_container_width=True, type="secondary"):
-            success, message, token = auth_service.resend_verification_email(current_user.id)
-            if success:
-                st.success(message)
-                if token:
-                    st.info(f"🔧 Dev: Verification token = {token[:20]}...")
-            else:
-                st.error(message)
+    st.markdown("")
     
-    st.markdown(f'<span class="tier-badge {tier_class}">{current_user.tier.upper()}</span>', unsafe_allow_html=True)
-    
-    if st.button("🚪 Logout", use_container_width=True):
-        auth_service.logout(st.session_state.session_token)
-        st.session_state.session_token = None
-        st.session_state.current_user = None
-        st.session_state.auth_view = 'login'
-        st.rerun()
-    
-    st.markdown("---")
-    
-    # Configuration Section (Collapsible)
-    with st.expander("⚙️ Configuration", expanded=False):
-        st.markdown("Configure your optimization settings")
-        use_cache = st.checkbox("Use cache", value=True, help="Cache results to avoid re-running")
-        dry_run = st.checkbox("Dry run mode", value=False, help="Test without API calls")
-        show_details = st.checkbox("Show stage details", value=True, help="Display intermediate outputs")
-    
-    # API Keys Section (Collapsible)
-    with st.expander("🔑 API Keys", expanded=True):
-        gemini_key = os.getenv("GEMINI_API_KEY", "")
-        deepseek_key = os.getenv("DEEPSEEK_API_KEY", "")
-        
-        if gemini_key and deepseek_key:
-            st.markdown('<div class="status-badge status-connected">● Connected</div>', unsafe_allow_html=True)
-        else:
-            st.markdown('<div class="status-badge status-disconnected">● Disconnected</div>', unsafe_allow_html=True)
-        
-        st.markdown("")
-        
-        if not gemini_key:
-            gemini_key = st.text_input("Gemini API Key:", type="password", key="gemini_input")
-            if gemini_key:
-                os.environ["GEMINI_API_KEY"] = gemini_key
-        else:
-            st.markdown("✓ Gemini: `***" + gemini_key[-4:] + "`")
-        
-        if not deepseek_key:
-            deepseek_key = st.text_input("DeepSeek API Key:", type="password", key="deepseek_input")
-            if deepseek_key:
-                os.environ["DEEPSEEK_API_KEY"] = deepseek_key
-        else:
-            st.markdown("✓ DeepSeek: `***" + deepseek_key[-4:] + "`")
-    
-    # Usage Section - Rate Limiting Display
-    st.markdown("#### 📊 Usage")
+    # Usage Counter - Simple
     usage_count = user_usage.count
-    
-    # Handle unlimited tier
     if usage_limit is None:
         st.markdown("✅ **Unlimited** requests")
-        st.markdown(f'<span style="color: #8b949e; font-size: 0.75rem;">Enterprise tier - no limits</span>', unsafe_allow_html=True)
     else:
         remaining = max(0, usage_limit - usage_count)
-        usage_pct = min(1.0, usage_count / usage_limit) if usage_limit > 0 else 0
-        
-        # Progress bar with color coding
         if usage_count >= usage_limit:
-            st.error(f"❌ Monthly limit reached ({usage_count}/{usage_limit})")
-            # Upgrade button
-            if current_user.tier == "free":
-                if st.button("⬆️ Upgrade to Pro", use_container_width=True, type="primary"):
-                    st.session_state.show_upgrade = True
-        elif usage_pct >= 0.8:
-            st.warning(f"⚠️ {remaining} requests remaining this month")
-            st.progress(usage_pct)
+            st.markdown(f"❌ **0** requests remaining")
         else:
             st.markdown(f"✅ **{remaining}** requests remaining")
-            st.progress(usage_pct)
-        
-        st.markdown(f'<span style="color: #8b949e; font-size: 0.75rem;">Resets on the 1st of each month</span>', unsafe_allow_html=True)
     
-    st.markdown("---")
-    
-    # Options Section (Collapsible)
-    with st.expander("🛠️ Options", expanded=False):
-        st.selectbox("Model Preference", ["Balanced", "Speed", "Quality"], index=0)
-        st.slider("Creativity", 0.0, 1.0, 0.7, help="Higher = more creative variations")
+    st.markdown("")
     
     # History Section (Collapsible)
     with st.expander("📜 History", expanded=False):
@@ -709,103 +637,52 @@ with st.sidebar:
         else:
             st.markdown("*No optimization history yet*")
     
-    st.markdown("---")
-    
-    # About Section (Collapsible at bottom)
-    with st.expander("ℹ️ About", expanded=False):
-        st.markdown("""
-**Promptly 3.0** uses a 5-stage pipeline:
-
-1. 🔍 **Discerner** - Analyze intent
-2. 📋 **CriticFirst** - Generate rubric  
-3. 🎨 **Expander** - Create variations
-4. 🏆 **Ranker** - Rank variations
-5. ✨ **Synthesizer** - Final prompt
-
-Cost: ~$0.0005/run (mostly free!)
-        """)
-
-
-# ============================================================================
-# MAIN CONTENT AREA
-# ============================================================================
-
-# Header
-st.markdown('<p class="main-header">⚡ Promptly</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-header">Transform your ideas into bulletproof prompts</p>', unsafe_allow_html=True)
-
-# Main tabs: Input / Examples / History
-main_tab1, main_tab2, main_tab3 = st.tabs(["📝 Input", "📚 Examples", "📜 History"])
-
-with main_tab1:
-    # Context Tags Section
-    st.markdown("#### 🏷️ Variables / Context Tags")
-    context_tags = st.multiselect(
-        "Add dynamic placeholders:",
-        options=[
-            "{user_name}", "{company}", "{industry}", "{product}",
-            "{tone}", "{audience}", "{language}", "{format}",
-            "{constraints}", "{examples}", "{persona}", "{goal}"
-        ],
-        default=[],
-        label_visibility="collapsed",
-        help="These variables will be included in your optimized prompt"
-    )
-    
     st.markdown("")
     
+    # Logout button
+    if st.button("🚪 Logout", use_container_width=True):
+        auth_service.logout(st.session_state.session_token)
+        st.session_state.session_token = None
+        st.session_state.current_user = None
+        st.session_state.auth_view = 'login'
+        st.rerun()
+
+
+# ============================================================================
+# MAIN CONTENT AREA - CENTERED, MINIMAL DESIGN
+# ============================================================================
+
+# Centered header
+st.markdown('<p class="main-header" style="text-align: center; font-size: 3.5rem;">PROMPTLY</p>', unsafe_allow_html=True)
+
+st.markdown("")
+st.markdown("")
+
+# Centered input area
+col_left, col_center, col_right = st.columns([1, 3, 1])
+
+with col_center:
     # Input Section
-    st.markdown("#### 💡 Your Prompt Idea")
     idea = st.text_area(
         "Enter your prompt idea:",
-        placeholder="Example: Write a prompt that helps an AI assistant explain complex scientific concepts to children aged 8-12",
-        height=120,
+        placeholder="Describe what you want your prompt to do...\n\nExample: Write a prompt that helps an AI assistant explain complex scientific concepts to children aged 8-12",
+        height=150,
         label_visibility="collapsed"
     )
     
     st.markdown("")
     
-    # Run button - centered
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        run_button = st.button(
-            "🔧 Optimize Prompt", 
-            type="primary", 
-            use_container_width=True
-        )
+    # Optimize button - centered
+    run_button = st.button(
+        "OPTIMIZE →", 
+        type="primary", 
+        use_container_width=True
+    )
 
-with main_tab2:
-    st.markdown("#### 📚 Example Prompt Ideas")
-    st.markdown("Click any example to use it as your starting point:")
-    
-    examples = [
-        ("Blog Titles", "Create a prompt for generating creative blog post titles that are SEO-friendly"),
-        ("Code Debug", "Write a prompt that helps debug Python code with clear, step-by-step explanations"),
-        ("Document Summary", "Design a prompt for summarizing long documents while preserving key insights"),
-        ("SQL Generator", "Create a prompt for generating SQL queries from natural language descriptions"),
-        ("Startup Ideas", "Write a prompt that helps brainstorm innovative startup ideas in a specific domain"),
-    ]
-    
-    for title, example in examples:
-        if st.button(f"💡 {title}", key=f"ex_{title}", use_container_width=True):
-            st.session_state['selected_example'] = example
-            st.rerun()
+# No context tags needed - simplify
+context_tags = []
 
-with main_tab3:
-    st.markdown("#### 📜 Optimization History")
-    if st.session_state.history:
-        for i, item in enumerate(reversed(st.session_state.history[-10:])):
-            with st.expander(f"**{item['idea'][:50]}...** - {item['timestamp']}"):
-                st.code(item['result'], language=None)
-    else:
-        st.info("No optimization history yet. Run your first prompt optimization!")
-
-
-# Check for selected example
-if 'selected_example' in st.session_state:
-    idea = st.session_state.pop('selected_example')
-
-st.markdown("---")
+st.markdown("")
 
 # ============================================================================
 # PROCESSING & RESULTS
