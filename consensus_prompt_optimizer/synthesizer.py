@@ -64,21 +64,30 @@ YOUR TASK:
 ---
 EXECUTION CREEP CHECK:
 Example: If user wants "a script that automates deployments"
-  X WRONG: Output actual deployment code
-  V RIGHT: Output a PROMPT that instructs an LLM to generate deployment code
+    X WRONG: Output actual deployment code
+    V RIGHT: Output a PROMPT that instructs an LLM to generate deployment code
 
 YOUR OUTPUT = A refined prompt, not generated content.
 ---
 
 FINAL CHECK: final_prompt contains a prompt, not generated content.
 
-OUTPUT FORMAT - respond with ONLY valid JSON:
+OUTPUT FORMAT (STRICT) - respond with ONLY valid JSON using EXACT keys:
 {{
-  "final_prompt": "<the complete optimized prompt>",
-  "synthesis_notes": "<explain your synthesis decisions>",
-  "rubric_compliance": {{"<criterion>": "<how addressed>", ...}},
-  "confidence": <0.0-1.0>
-}}"""
+    "final_prompt": "<the complete optimized prompt as plain text>",
+    "synthesis_notes": "<concise rationale of what you combined and why>",
+    "rubric_compliance": {{"<criterion>": "<how addressed>", ...}},
+    "confidence": <0.0-1.0>
+}}
+
+REQUIRED:
+- Do NOT add or rename keys (no "optimized_prompt", "summary", etc.).
+- All four keys must be present; missing any key is invalid.
+- rubric_compliance must be an object with the rubric criteria as keys.
+- confidence must be a number between 0 and 1.
+
+If your previous attempt failed validation, immediately output corrected JSON with the EXACT keys above.
+"""
 
 
 def synthesize_final(
