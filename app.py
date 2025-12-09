@@ -448,16 +448,16 @@ def show_forgot_password_form():
         if submitted:
             success, message, token = auth_service.request_password_reset(email)
             if success:
-                st.success(f"✅ {message}")
+                st.success(message)
                 # In development, show the token (remove in production)
                 if token:
-                    st.info(f"🔧 Dev Mode: Reset token = {token[:20]}...")
+                    st.info(f"Dev Mode: Reset token = {token[:20]}...")
                     st.session_state.reset_token = token
                     st.session_state.auth_view = 'reset_password'
                     time.sleep(1)
                     st.rerun()
             else:
-                st.error(f"❌ {message}")
+                st.error(message)
     
     if st.button("← Back to Login"):
         st.session_state.auth_view = 'login'
@@ -477,17 +477,17 @@ def show_reset_password_form():
         if submitted:
             token = st.session_state.reset_token
             if not token:
-                st.error("❌ Invalid reset link. Please request a new one.")
+                st.error("Invalid reset link. Please request a new one.")
             else:
                 success, message = auth_service.reset_password(token, new_password, confirm_password)
                 if success:
-                    st.success(f"✅ {message}")
+                    st.success(message)
                     st.session_state.reset_token = None
                     st.session_state.auth_view = 'login'
                     time.sleep(1)
                     st.rerun()
                 else:
-                    st.error(f"❌ {message}")
+                    st.error(message)
     
     if st.button("← Back to Login"):
         st.session_state.reset_token = None
@@ -497,7 +497,7 @@ def show_reset_password_form():
 
 def show_auth_page():
     """Display login/register page."""
-    st.markdown('<p class="main-header">⚡ Promptly</p>', unsafe_allow_html=True)
+    st.markdown('<p class="main-header">PROMPTLY</p>', unsafe_allow_html=True)
     st.markdown('<p class="sub-header">Transform your ideas into bulletproof prompts</p>', unsafe_allow_html=True)
     
     st.markdown("")
@@ -516,7 +516,7 @@ def show_auth_page():
             return
         
         # Normal login/register tabs
-        auth_tab1, auth_tab2 = st.tabs(["🔐 Login", "📝 Register"])
+        auth_tab1, auth_tab2 = st.tabs(["Login", "Register"])
         
         with auth_tab1:
             st.markdown("#### Welcome back!")
@@ -529,11 +529,11 @@ def show_auth_page():
                 if submitted:
                     user, token, error = auth_service.login(email, password)
                     if error:
-                        st.error(f"❌ {error}")
+                        st.error(f"{error}")
                     else:
                         st.session_state.session_token = token
                         st.session_state.current_user = user
-                        st.success("✅ Login successful!")
+                        st.success("Login successful")
                         time.sleep(0.5)
                         st.rerun()
             
@@ -563,16 +563,16 @@ def show_auth_page():
                         reg_email, first_name, last_name, reg_password, confirm_password
                     )
                     if error:
-                        st.error(f"❌ {error}")
+                        st.error(f"{error}")
                     else:
                         st.session_state.session_token = token
                         st.session_state.current_user = user
-                        st.success("✅ Account created successfully!")
+                        st.success("Account created successfully")
                         time.sleep(0.5)
                         st.rerun()
             
             st.markdown("---")
-            st.markdown('<p style="color: #8b949e; font-size: 0.85rem; text-align: center;">🎁 Free tier includes 100 optimizations/month</p>', unsafe_allow_html=True)
+            st.markdown('<p style="color: #8b949e; font-size: 0.85rem; text-align: center;">· Free tier includes 100 optimizations/month</p>', unsafe_allow_html=True)
     
     # Footer
     st.markdown("""
@@ -606,31 +606,31 @@ show_details = False
 
 with st.sidebar:
     # Logo/Brand
-    st.markdown("### ⚡ Promptly")
+    st.markdown("### Promptly")
     st.markdown('<span style="color: #8b949e; font-size: 0.85rem;">AI-Powered Prompt Engineering</span>', unsafe_allow_html=True)
     
     st.markdown("---")
     
     # User - Just name
-    st.markdown(f"👤 **{current_user.full_name}**")
+    st.markdown(f"**{current_user.full_name}**")
     
     st.markdown("")
     
     # Usage Counter - Simple
     usage_count = user_usage.count
     if usage_limit is None:
-        st.markdown("✅ **Unlimited** requests")
+        st.markdown("**Unlimited** requests")
     else:
         remaining = max(0, usage_limit - usage_count)
         if usage_count >= usage_limit:
-            st.markdown(f"❌ **0** requests remaining")
+            st.markdown(f"**0** requests remaining")
         else:
-            st.markdown(f"✅ **{remaining}** requests remaining")
+            st.markdown(f"**{remaining}** requests remaining")
     
     st.markdown("")
     
     # History Section (Collapsible)
-    with st.expander("📜 History", expanded=False):
+    with st.expander("History", expanded=False):
         if st.session_state.history:
             for i, item in enumerate(st.session_state.history[-5:]):
                 st.markdown(f"**{i+1}.** {item['idea'][:40]}...")
@@ -640,7 +640,7 @@ with st.sidebar:
     st.markdown("")
     
     # Logout button
-    if st.button("🚪 Logout", use_container_width=True):
+    if st.button("Logout", use_container_width=True):
         auth_service.logout(st.session_state.session_token)
         st.session_state.session_token = None
         st.session_state.current_user = None
@@ -689,17 +689,17 @@ st.markdown("")
 # ============================================================================
 if run_button and idea:
     if not os.getenv("GEMINI_API_KEY") or not os.getenv("DEEPSEEK_API_KEY"):
-        st.error("⚠️ Please configure API keys in the sidebar first!")
+        st.error("Please configure API keys in environment variables")
     else:
         # Check rate limit from database
         is_within_limit, current_count, limit = usage_service.check_limit(current_user.id, current_user.tier)
         
         if not is_within_limit:
-            st.error(f"❌ Monthly usage limit reached ({current_count}/{limit} requests). Resets on the 1st of next month.")
+            st.error(f"Monthly usage limit reached ({current_count}/{limit} requests). Resets on the 1st of next month.")
             if current_user.tier == "free":
-                st.info("💡 Upgrade to Pro for 500 requests/month!")
+                st.info("Upgrade to Pro for 500 requests/month")
         else:
-            with st.spinner("🔄 Optimizing your prompt... (this takes 10-30 seconds)"):
+            with st.spinner("Optimizing your prompt... (this takes 10-30 seconds)"):
                 try:
                     start_time = time.time()
                     
@@ -730,11 +730,11 @@ if run_button and idea:
                     })
                     
                 except Exception as e:
-                    st.error(f"❌ Error: {str(e)}")
+                    st.error(f"Error: {str(e)}")
                     st.exception(e)
 
 elif run_button and not idea:
-    st.warning("⚠️ Please enter a prompt idea first!")
+    st.warning("Please enter a prompt idea first")
 
 
 # ============================================================================
@@ -766,17 +766,17 @@ if 'last_result' in st.session_state:
     with col_actions:
         st.markdown("")
         st.markdown("")
-        if st.button("📋 Copy", use_container_width=True):
-            st.toast("Copied to clipboard!", icon="✅")
-        if st.button("💾 Save", use_container_width=True):
+        if st.button("Copy", use_container_width=True):
+            st.toast("Copied to clipboard!")
+        if st.button("Save", use_container_width=True):
             st.download_button(
-                label="📥 Download",
+                label="Download",
                 data=prompt_text,
                 file_name=f"prompt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
                 mime="text/plain",
                 key="save_prompt"
             )
-        if st.button("🔄 Regenerate", use_container_width=True):
+        if st.button("Regenerate", use_container_width=True):
             st.session_state.pop('last_result', None)
             st.rerun()
     
@@ -785,7 +785,7 @@ if 'last_result' in st.session_state:
     # ========================================================================
     # METRICS PANEL
     # ========================================================================
-    st.markdown("#### 📊 Optimization Metrics")
+    st.markdown("#### Optimization Metrics")
     
     usage = result.get('usage', {})
     total_tokens = usage.get('total_input_tokens', 0) + usage.get('total_output_tokens', 0)
@@ -830,7 +830,7 @@ if 'last_result' in st.session_state:
     st.markdown("")
     
     # Additional Details (Collapsible)
-    with st.expander("📋 Detailed Analysis", expanded=False):
+    with st.expander("Detailed Analysis", expanded=False):
         detail_tab1, detail_tab2, detail_tab3 = st.tabs(["Variations", "Rubric", "Raw JSON"])
         
         with detail_tab1:
@@ -857,7 +857,7 @@ if 'last_result' in st.session_state:
         with detail_tab3:
             st.json(result)
             st.download_button(
-                label="📥 Download Full JSON",
+                label="Download Full JSON",
                 data=json.dumps(result, indent=2),
                 file_name=f"promptly_output_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
                 mime="application/json"
@@ -867,17 +867,17 @@ if 'last_result' in st.session_state:
 # ============================================================================
 # UPGRADE MODAL (Placeholder for Stripe)
 # ============================================================================
-@st.dialog("⬆️ Upgrade to Promptly Pro")
+@st.dialog("Upgrade to Promptly Pro")
 def show_upgrade_dialog():
     st.markdown("""
     ### Unlock More Power
     
     **Promptly Pro** gives you:
     
-    ✅ **500 optimizations/month** (vs 100 free)  
-    ✅ Priority processing  
-    ✅ Advanced analytics  
-    ✅ Email support  
+    → **500 optimizations/month** (vs 100 free)  
+    → Priority processing  
+    → Advanced analytics  
+    → Email support  
     
     ---
     
@@ -885,7 +885,7 @@ def show_upgrade_dialog():
     
     """)
     
-    st.info("🚧 **Coming Soon!** Stripe integration is in development.")
+    st.info("Coming Soon - Stripe integration is in development.")
     
     st.markdown("#### Join the Waitlist")
     st.markdown("Be the first to know when Pro launches:")
