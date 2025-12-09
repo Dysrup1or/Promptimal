@@ -1,17 +1,17 @@
 @echo off
 REM ============================================
-REM Promptimal v2 - UI Startup Script (Windows)
+REM Promptly 3.0 - UI Startup Script (Windows)
 REM ============================================
 
 echo.
-echo  ____                            _   _                 _ 
-echo ^|  _ \ _ __ ___  _ __ ___  _ __ ^| ^|_(_)_ __ ___   __ _^| ^|
-echo ^| ^|_) ^| '__/ _ \^| '_ ` _ \^| '_ \^| __^| ^| '_ ` _ \ / _` ^| ^|
-echo ^|  __/^| ^| ^| (_) ^| ^| ^| ^| ^| ^| ^|_) ^| ^|_^| ^| ^| ^| ^| ^| ^| (_^| ^| ^|
-echo ^|_^|   ^|_^|  \___/^|_^| ^|_^| ^|_^| .__/ \__^|_^|_^| ^|_^| ^|_^|\__,_^|_^|
-echo                            ^|_^|                           
+echo  ____                            _   _       
+echo ^|  _ \ _ __ ___  _ __ ___  _ __ ^| ^|_^| ^|_   _ 
+echo ^| ^|_) ^| '__/ _ \^| '_ ` _ \^| '_ \^| __^| ^| ^| ^| ^|
+echo ^|  __/^| ^| ^| (_) ^| ^| ^| ^| ^| ^| ^|_) ^| ^|_^| ^| ^|_^| ^|
+echo ^|_^|   ^|_^|  \___/^|_^| ^|_^| ^|_^| .__/ \__^|_^|\__, ^|
+echo                            ^|_^|          ^|___/ 
 echo.
-echo Starting Promptimal v2 Web Interface...
+echo Starting Promptly 3.0 - AI-Powered Prompt Engineering Platform...
 echo.
 
 REM Check if streamlit is installed

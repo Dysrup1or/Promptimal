@@ -197,7 +197,7 @@ class TestCostCalculation:
         assert 0.00025 < cost < 0.00035
     
     def test_gemini_free(self):
-        cost = calculate_cost(1000, 500, "gemini/gemini-1.5-flash")
+        cost = calculate_cost(1000, 500, "gemini/gemini-2.0-flash")
         assert cost == 0.0
 
 

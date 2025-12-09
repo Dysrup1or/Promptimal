@@ -1,7 +1,32 @@
-crewai>=0.28.0
+# ==============================================
+# PROMPTLY 3.0 - DEPENDENCIES
+# ==============================================
+# Core dependencies for production deployment
+# ==============================================
+
+# LLM Integration
 litellm>=1.0.0
+
+# Environment & Config
 python-dotenv>=1.0.0
+
+# Token Counting
 tiktoken>=0.5.0
-pytest>=7.4.0
+
+# Schema Validation
 pydantic>=2.0.0
+
+# Web UI
 streamlit>=1.28.0
+
+# Authentication
+bcrypt>=4.0.0
+
+# Database (PostgreSQL support for Railway)
+psycopg2-binary>=2.9.0
+
+# Logging
+loguru>=0.7.0
+
+# Development/Testing (optional - can be removed for production)
+pytest>=7.4.0

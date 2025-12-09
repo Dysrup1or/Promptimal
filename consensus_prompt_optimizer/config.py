@@ -42,6 +42,18 @@ EXPANDER_TOKEN_LIMIT = 350  # Legacy v1 limit (not used in v2)
 DEEPSEEK_TOKEN_CAP = 4000   # v2: DeepSeek output limit (~$0.0011 max)
 
 # ============================================================================
+# RATE LIMITING & COST CONTROLS (Production Safety)
+# ============================================================================
+# Free tier limits - adjust for paid tiers
+FREE_TIER_MONTHLY_LIMIT = 100   # Max requests per user per month
+COST_PER_REQUEST_AVG = 0.0012   # Average cost per optimization (~$0.0012)
+MAX_MONTHLY_COST_FREE_USER = FREE_TIER_MONTHLY_LIMIT * COST_PER_REQUEST_AVG  # ~$0.12
+
+# Paid tier limits (for future implementation)
+PRO_TIER_MONTHLY_LIMIT = 500    # Pro users get 500/month
+ENTERPRISE_TIER_LIMIT = None    # Unlimited for enterprise
+
+# ============================================================================
 # API KEYS
 # ============================================================================
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")

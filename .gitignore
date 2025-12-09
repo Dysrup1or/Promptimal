@@ -18,6 +18,15 @@ secrets/
 credentials/
 
 # ----------------------------------------------
+# DATABASE (User Data - Privacy)
+# ----------------------------------------------
+# SQLite database contains user credentials & usage
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# ----------------------------------------------
 # PYTHON
 # ----------------------------------------------
 # Byte-compiled / optimized / DLL files
