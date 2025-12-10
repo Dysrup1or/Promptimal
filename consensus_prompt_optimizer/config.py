@@ -13,8 +13,13 @@ load_dotenv()
 # MODEL NAMES (LiteLLM format)
 # ============================================================================
 GEMINI_FAST = "gemini/gemini-2.0-flash"  # Updated to 2.0 (1.5 deprecated)
-DEEPSEEK_EXPAND = "deepseek/deepseek-chat"
-DEEPSEEK_CHEAP = "deepseek/deepseek-chat"  # Alias for v2 compatibility
+
+# Groq-hosted Llama for Expander (FAST: 280 TPS, replaces DeepSeek)
+GROQ_EXPAND = "groq/llama-3.3-70b-versatile"
+
+# Legacy aliases for backward compatibility
+DEEPSEEK_EXPAND = "deepseek/deepseek-chat"  # Deprecated, use GROQ_EXPAND
+DEEPSEEK_CHEAP = "deepseek/deepseek-chat"   # Deprecated, use GROQ_EXPAND
 
 # ============================================================================
 # PRICING (USD per token)
@@ -25,6 +30,17 @@ PRICES_USD = {
         "input": 0.00000000,  # Gemini Flash is free tier for now
         "output": 0.00000000,
     },
+    # Groq Llama 3.3 70B - Primary Expander model
+    "groq/llama-3.3-70b-versatile": {
+        "input": 0.00000059,   # $0.59 per 1M input tokens
+        "output": 0.00000079,  # $0.79 per 1M output tokens
+    },
+    # Groq Llama 3.1 8B - Faster alternative (if needed)
+    "groq/llama-3.1-8b-instant": {
+        "input": 0.00000005,   # $0.05 per 1M input tokens
+        "output": 0.00000008,  # $0.08 per 1M output tokens
+    },
+    # DeepSeek (legacy, kept for fallback)
     "deepseek/deepseek-chat": {
         "input": 0.00000014,   # $0.14 per 1M input tokens
         "output": 0.00000028,  # $0.28 per 1M output tokens
@@ -39,6 +55,11 @@ PRICES_USD = {
 MAX_TOKENS_PER_CALL = 4000  # Hard cap per LLM call (increased for testing)
 MAX_CRITIC_ITERATIONS = 3   # Maximum refinement cycles
 EXPANDER_TOKEN_LIMIT = 350  # Legacy v1 limit (not used in v2)
+
+# Groq token cap for Expander (Llama 3.3 70B has 32K output limit)
+GROQ_TOKEN_CAP = 4000       # Output limit for Expander stage
+
+# Legacy DeepSeek cap (deprecated)
 DEEPSEEK_TOKEN_CAP = 4000   # v2: DeepSeek output limit (~$0.0011 max)
 
 # ============================================================================
@@ -57,7 +78,8 @@ ENTERPRISE_TIER_LIMIT = None    # Unlimited for enterprise
 # API KEYS
 # ============================================================================
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")  # Primary for Expander
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")  # Legacy fallback
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")  # LiteLLM may need this set
 
 # ============================================================================

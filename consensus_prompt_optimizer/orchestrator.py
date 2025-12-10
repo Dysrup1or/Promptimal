@@ -22,7 +22,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 
 # v2 imports
-from .config import GEMINI_FAST, DEEPSEEK_CHEAP, DEEPSEEK_TOKEN_CAP
+from .config import GEMINI_FAST, GROQ_EXPAND, GROQ_TOKEN_CAP
 from .schemas import (
     DiscernOutput,
     RubricOutput,
@@ -361,10 +361,12 @@ class PromptimaV2:
                 C=ExpansionVariant(prompt="Prompt C", notes="structured", checklist_score="6/6")
             )
         
+        # Use Groq Llama 3.3 70B for ultra-fast expansion (280+ TPS)
+        # This is the SINGLE non-Gemini call per run
         response = call_llm_v2(
-            model=DEEPSEEK_CHEAP,  # THE SINGLE DEEPSEEK CALL
+            model=GROQ_EXPAND,  # Groq Llama 3.3 70B - fast & high quality
             prompt=prompt,
-            max_tokens=DEEPSEEK_TOKEN_CAP,  # 350 token cap
+            max_tokens=GROQ_TOKEN_CAP,  # 4000 token cap
             enforce_json=True
         )
         self.tracker.record(response, "expander")

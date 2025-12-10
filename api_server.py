@@ -65,7 +65,7 @@ class StreamingOrchestrator:
     STAGES = [
         ("discerner", "Discerner", "Analyzing intent, audience, constraints..."),
         ("critic_first", "Rubric", "Drafting quality criteria and guardrails..."),
-        ("expander", "Expander", "Producing diverse prompt variants (DeepSeek)..."),
+        ("expander", "Expander", "Generating 3 prompt variations (Groq Llama 70B)..."),
         ("ranker", "Ranker", "Scoring and ordering variants..."),
         ("synthesizer", "Synthesizer", "Merging best elements into final prompt..."),
     ]
@@ -116,8 +116,8 @@ class StreamingOrchestrator:
             criteria_count = len(rubric.rubric)
             await self.emit("Rubric", "done", f"Created {criteria_count} quality criteria, {len(rubric.checklist)} checklist items")
             
-            # Stage 3: Expander (DeepSeek - longest stage)
-            await self.emit("Expander", "running", "Generating 3 diverse prompt variations with DeepSeek...")
+            # Stage 3: Expander (Groq Llama 3.3 70B - ultra-fast at 280+ TPS)
+            await self.emit("Expander", "running", "Generating 3 diverse prompt variations with Groq Llama...")
             with ThreadPoolExecutor() as pool:
                 expansions = await loop.run_in_executor(
                     pool, functools.partial(optimizer._run_expander, idea, discern, rubric)

@@ -7,6 +7,7 @@ Key v2 enhancements:
 - JSON mode enforcement for structured outputs
 - Temperature=0 for deterministic results
 - Token tracking with sub-penny cost calculation
+- Groq support for ultra-fast Expander stage (280+ TPS)
 """
 
 import os
@@ -17,15 +18,24 @@ from pathlib import Path
 from typing import Dict, Any, Optional, Tuple
 from datetime import datetime
 
-from .config import DEEPSEEK_CHEAP, GEMINI_FAST, DEEPSEEK_TOKEN_CAP
+from .config import (
+    DEEPSEEK_CHEAP, 
+    GEMINI_FAST, 
+    GROQ_EXPAND,
+    DEEPSEEK_TOKEN_CAP,
+    GROQ_TOKEN_CAP
+)
 
 
 # ============================================================================
-# COST CONSTANTS (as of June 2025)
+# COST CONSTANTS (as of December 2025)
 # ============================================================================
 COST_PER_1M = {
     DEEPSEEK_CHEAP: {"input": 0.14, "output": 0.28},
     GEMINI_FAST: {"input": 0.0, "output": 0.0},  # Free tier
+    GROQ_EXPAND: {"input": 0.59, "output": 0.79},  # Llama 3.3 70B
+    "groq/llama-3.3-70b-versatile": {"input": 0.59, "output": 0.79},
+    "groq/llama-3.1-8b-instant": {"input": 0.05, "output": 0.08},
 }
 
 # Cache directory
@@ -172,7 +182,7 @@ def call_llm_v2(
     Enhanced LLM call with v2 features.
     
     Args:
-        model: Model identifier (GEMINI_FAST or DEEPSEEK_CHEAP)
+        model: Model identifier (GEMINI_FAST, GROQ_EXPAND, or DEEPSEEK_CHEAP)
         prompt: The prompt to send
         max_tokens: Maximum response tokens
         temperature: Sampling temperature (default 0 for determinism)
@@ -191,9 +201,11 @@ def call_llm_v2(
     # Count input tokens
     input_tokens = count_tokens(prompt, model)
     
-    # Enforce token cap for DeepSeek
+    # Enforce token caps based on model
     if model == DEEPSEEK_CHEAP and max_tokens > DEEPSEEK_TOKEN_CAP:
         max_tokens = DEEPSEEK_TOKEN_CAP
+    elif model.startswith("groq/") and max_tokens > GROQ_TOKEN_CAP:
+        max_tokens = GROQ_TOKEN_CAP
     
     # Build messages
     messages = [{"role": "user", "content": prompt}]

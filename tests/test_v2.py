@@ -199,6 +199,14 @@ class TestCostCalculation:
     def test_gemini_free(self):
         cost = calculate_cost(1000, 500, "gemini/gemini-2.0-flash")
         assert cost == 0.0
+    
+    def test_groq_cost(self):
+        """Test Groq Llama 3.3 70B cost calculation."""
+        cost = calculate_cost(2000, 4000, "groq/llama-3.3-70b-versatile")
+        # Input: 2000/1M * 0.59 = 0.00118
+        # Output: 4000/1M * 0.79 = 0.00316
+        # Total: ~0.00434
+        assert 0.004 < cost < 0.005
 
 
 class TestPromptCompression:
