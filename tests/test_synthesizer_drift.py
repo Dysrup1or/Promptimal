@@ -77,42 +77,30 @@ def patch_llm(monkeypatch, payloads):
 
 def test_synth_only_prompt_field(monkeypatch, optimizer, synth_inputs):
     payloads = [
-        {"prompt": "foo"},  # invalid, triggers retry
-        {
-            "final_prompt": "ok",
-            "synthesis_notes": "notes",
-            "rubric_compliance": {"c": "done"},
-            "confidence": 0.9,
-        },
+        {"prompt": "foo"},  # coerced
     ]
     stub = patch_llm(monkeypatch, payloads)
 
     out = optimizer._run_synthesizer(*synth_inputs)
     assert isinstance(out, SynthesizerOutput)
-    assert out.final_prompt == "ok"
-    assert stub.calls == 2  # first invalid + retry
+    assert out.final_prompt == "foo"
+    assert stub.calls == 1  # coerced without retry
 
 
 def test_synth_renamed_key(monkeypatch, optimizer, synth_inputs):
     payloads = [
-        {"optimized_prompt": "bad"},  # missing required keys
-        {
-            "final_prompt": "ok",
-            "synthesis_notes": "notes",
-            "rubric_compliance": {"c": "done"},
-            "confidence": 0.8,
-        },
+        {"optimized_prompt": "bad"},  # coerced alias
     ]
     stub = patch_llm(monkeypatch, payloads)
 
     out = optimizer._run_synthesizer(*synth_inputs)
     assert isinstance(out, SynthesizerOutput)
-    assert stub.calls == 2
+    assert out.final_prompt == "bad"
+    assert stub.calls == 1
 
 
-def test_synth_missing_confidence(monkeypatch, optimizer, synth_inputs):
+def test_synth_confidence_below_threshold(monkeypatch, optimizer, synth_inputs):
     payloads = [
-        {"final_prompt": "ok", "synthesis_notes": "notes", "rubric_compliance": {"c": "done"}},
         {
             "final_prompt": "ok",
             "synthesis_notes": "notes",
@@ -124,7 +112,7 @@ def test_synth_missing_confidence(monkeypatch, optimizer, synth_inputs):
 
     with pytest.raises(ValueError):
         optimizer._run_synthesizer(*synth_inputs)
-    assert stub.calls == 2
+    assert stub.calls == 2  # initial attempt + retry
 
 
 def test_synth_empty_rubric(monkeypatch, optimizer, synth_inputs):
@@ -137,3 +125,15 @@ def test_synth_empty_rubric(monkeypatch, optimizer, synth_inputs):
     with pytest.raises(ValueError):
         optimizer._run_synthesizer(*synth_inputs)
     assert stub.calls == 2
+
+
+def test_synth_optimized_prompt_coerced(monkeypatch, optimizer, synth_inputs):
+    payloads = [
+        {"optimized_prompt": "coerced result"},
+    ]
+    stub = patch_llm(monkeypatch, payloads)
+
+    out = optimizer._run_synthesizer(*synth_inputs)
+    assert out.final_prompt == "coerced result"
+    assert out.confidence >= 0.7
+    assert stub.calls == 1

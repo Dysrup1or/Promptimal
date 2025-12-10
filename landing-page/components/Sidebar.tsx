@@ -1,24 +1,29 @@
 "use client";
 
 import { useState } from 'react';
-import { History, ChevronLeft, ChevronRight } from 'lucide-react';
+import { History, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 
-interface PromptHistoryItem {
+export interface PromptHistoryItem {
   id: string;
   preview: string;
   timestamp: string;
+  fullPrompt: string;
 }
 
 interface SidebarProps {
   history?: PromptHistoryItem[];
   promptsUsed?: number;
   promptsTotal?: number;
+  selectedId?: string | null;
+  onSelect?: (id: string) => void;
 }
 
 export default function Sidebar({ 
   history = [], 
   promptsUsed = 0, 
-  promptsTotal = 100 
+  promptsTotal = 100,
+  selectedId = null,
+  onSelect,
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const promptsRemaining = promptsTotal - promptsUsed;
@@ -68,19 +73,33 @@ export default function Sidebar({
                 <p className="font-mono text-xs text-slate-gray mt-1">Your optimized prompts will appear here</p>
               </div>
             ) : (
-              history.map((item) => (
-                <button
-                  key={item.id}
-                  className="w-full text-left p-3 rounded-md hover:bg-white/5 transition-colors group"
-                >
-                  <p className="font-mono text-sm text-gray-300 truncate group-hover:text-electric-cyan transition-colors">
-                    {item.preview}
-                  </p>
-                  <p className="font-mono text-xs text-slate-gray mt-1">
-                    {item.timestamp}
-                  </p>
-                </button>
-              ))
+              history.map((item) => {
+                const isSelected = selectedId === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => onSelect?.(item.id)}
+                    className={`w-full text-left p-3 rounded-md transition-colors group ${
+                      isSelected ? 'bg-white/10 border border-electric-cyan/40' : 'hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <p className="font-mono text-sm text-gray-300 truncate group-hover:text-electric-cyan transition-colors flex-1">
+                        {item.preview}
+                      </p>
+                      {isSelected && <Eye className="w-4 h-4 text-electric-cyan" />}
+                    </div>
+                    <p className="font-mono text-xs text-slate-gray mt-1">
+                      {item.timestamp}
+                    </p>
+                    {isSelected && (
+                      <p className="mt-3 font-mono text-xs text-white/90 whitespace-pre-wrap leading-relaxed">
+                        {item.fullPrompt}
+                      </p>
+                    )}
+                  </button>
+                );
+              })
             )}
           </div>
         )}

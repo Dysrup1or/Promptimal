@@ -18,9 +18,14 @@ from urllib.parse import urlparse
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 USE_POSTGRES = bool(DATABASE_URL)
 
-# SQLite fallback for local development
-DATA_DIR = Path(__file__).parent.parent / "data"
-DB_PATH = DATA_DIR / "promptly.db"
+# SQLite fallback for local development (override with PROMPTLY_DB_PATH for tests/custom setups)
+_CUSTOM_DB_PATH = os.getenv("PROMPTLY_DB_PATH", "").strip()
+if _CUSTOM_DB_PATH:
+    DB_PATH = Path(_CUSTOM_DB_PATH)
+    DATA_DIR = DB_PATH.parent
+else:
+    DATA_DIR = Path(__file__).parent.parent / "data"
+    DB_PATH = DATA_DIR / "promptly.db"
 
 # PostgreSQL connection (imported lazily to avoid dependency issues)
 _pg_pool = None

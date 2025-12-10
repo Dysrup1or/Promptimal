@@ -462,16 +462,31 @@ class PromptimaV2:
         raw = parse_json_response_v2(response["content"])
 
         def coerce_and_validate(data: Dict[str, Any]) -> SynthesizerOutput:
-            # Coerce stray "prompt" into final_prompt only if we can satisfy schema after checks
-            if isinstance(data, dict) and "prompt" in data and (
-                "final_prompt" not in data or "synthesis_notes" not in data or "confidence" not in data
-            ):
-                data = {
-                    "final_prompt": data.get("final_prompt") or data.get("prompt"),
-                    "synthesis_notes": data.get("synthesis_notes") or "Auto-coerced from 'prompt' field due to model drift.",
-                    "rubric_compliance": data.get("rubric_compliance") or {},
-                    "confidence": data.get("confidence") or 0.5,
-                }
+            # Coerce common drifted keys into the required schema before hard validation
+            if isinstance(data, dict):
+                synonyms = [
+                    data.get("final_prompt"),
+                    data.get("prompt"),
+                    data.get("optimized_prompt"),
+                    data.get("best_prompt"),
+                ]
+                coerced_prompt = next((p for p in synonyms if isinstance(p, str) and p.strip()), None)
+
+                if coerced_prompt and (
+                    "final_prompt" not in data or "synthesis_notes" not in data or "confidence" not in data
+                ):
+                    rubric_fallback = data.get("rubric_compliance")
+                    if not isinstance(rubric_fallback, dict) or not rubric_fallback:
+                        rubric_fallback = {
+                            key: "Auto-coerced due to schema drift" for key in (rubric.rubric.keys() or ["quality"])
+                        }
+
+                    data = {
+                        "final_prompt": coerced_prompt,
+                        "synthesis_notes": data.get("synthesis_notes") or "Auto-coerced from drifted key.",
+                        "rubric_compliance": rubric_fallback,
+                        "confidence": data.get("confidence") or 0.7,
+                    }
 
             # Hard validation before Pydantic: non-empty strings, non-empty rubric, confidence in [0,1] and >= 0.7
             if not isinstance(data, dict):
