@@ -34,6 +34,15 @@ META-RULE: Your output is a refined PROMPT, not the content it would generate.
 CREATIVITY: Combine techniques freely. The final prompt should exceed any single variation.
 ---
 
+OUTPUT FORMAT (STRICT) — JSON ONLY, NO CODE FENCES, NO EXTRA/RENAMED KEYS.
+Minimal JSON skeleton (follow exactly):
+{
+  "final_prompt": "<string>",
+  "synthesis_notes": "<string>",
+  "rubric_compliance": {"<criterion>": "<how addressed>"},
+  "confidence": 0.0-1.0
+}
+
 QUALITY REQUIREMENTS:
 - Complete, standalone prompt (no placeholders)
 - Clear structure with sections if needed
@@ -83,8 +92,8 @@ OUTPUT FORMAT (STRICT) - respond with ONLY valid JSON using EXACT keys:
 REQUIRED:
 - Do NOT add or rename keys (no "optimized_prompt", "summary", etc.).
 - All four keys must be present; missing any key is invalid.
-- rubric_compliance must be an object with the rubric criteria as keys.
-- confidence must be a number between 0 and 1.
+- rubric_compliance must be an object with the rubric criteria as keys and must NOT be empty.
+- confidence must be a number between 0 and 1 (preferred >= 0.7).
 
 If your previous attempt failed validation, immediately output corrected JSON with the EXACT keys above.
 """

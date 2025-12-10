@@ -460,7 +460,57 @@ class PromptimaV2:
         self.tracker.record(response, "synthesizer")
         
         raw = parse_json_response_v2(response["content"])
-        return validate_stage_output(raw, SynthesizerOutput)
+
+        def coerce_and_validate(data: Dict[str, Any]) -> SynthesizerOutput:
+            # Coerce stray "prompt" into final_prompt only if we can satisfy schema after checks
+            if isinstance(data, dict) and "prompt" in data and (
+                "final_prompt" not in data or "synthesis_notes" not in data or "confidence" not in data
+            ):
+                data = {
+                    "final_prompt": data.get("final_prompt") or data.get("prompt"),
+                    "synthesis_notes": data.get("synthesis_notes") or "Auto-coerced from 'prompt' field due to model drift.",
+                    "rubric_compliance": data.get("rubric_compliance") or {},
+                    "confidence": data.get("confidence") or 0.5,
+                }
+
+            # Hard validation before Pydantic: non-empty strings, non-empty rubric, confidence in [0,1] and >= 0.7
+            if not isinstance(data, dict):
+                raise ValueError("Synthesizer output is not a JSON object")
+
+            def _is_non_empty_str(x: Any) -> bool:
+                return isinstance(x, str) and len(x.strip()) > 0
+
+            if not _is_non_empty_str(data.get("final_prompt")):
+                raise ValueError("final_prompt missing or empty")
+            if not _is_non_empty_str(data.get("synthesis_notes")):
+                raise ValueError("synthesis_notes missing or empty")
+
+            rc = data.get("rubric_compliance")
+            if not isinstance(rc, dict) or len(rc) == 0:
+                raise ValueError("rubric_compliance missing or empty")
+
+            conf = data.get("confidence")
+            if not isinstance(conf, (int, float)) or conf < 0 or conf > 1:
+                raise ValueError("confidence missing or out of range")
+            if conf < 0.7:
+                raise ValueError("confidence below threshold")
+
+            return validate_stage_output(data, SynthesizerOutput)
+
+        try:
+            return coerce_and_validate(raw)
+        except ValueError:
+            # Retry once with explicit schema correction to avoid optimized_prompt / missing keys
+            retry_prompt = prompt + "\n\nPREVIOUS ATTEMPT FAILED VALIDATION. Output STRICT JSON with EXACT keys: final_prompt, synthesis_notes, rubric_compliance (non-empty object), confidence (0-1, at least 0.7). Do NOT add or rename keys. Do NOT include code fences."
+            retry_response = call_llm_v2(
+                model=GEMINI_FAST,
+                prompt=retry_prompt,
+                max_tokens=2000,
+                enforce_json=True
+            )
+            self.tracker.record(retry_response, "synthesizer.retry")
+            retry_raw = parse_json_response_v2(retry_response["content"])
+            return coerce_and_validate(retry_raw)
     
     def _build_output(
         self,
