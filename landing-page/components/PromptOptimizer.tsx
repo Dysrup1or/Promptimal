@@ -16,7 +16,7 @@ export default function PromptOptimizer({ onOptimized, selectedHistory }: Prompt
   const [optimized, setOptimized] = useState('');
   const [copied, setCopied] = useState(false);
   const [debate, setDebate] = useState<
-    { stage: string; status: 'pending' | 'running' | 'done'; text: string }
+    { stage: string; status: 'pending' | 'running' | 'done'; text: string }[]
   >([
     { stage: 'Discerner', status: 'pending', text: '' },
     { stage: 'Rubric', status: 'pending', text: '' },
@@ -32,7 +32,7 @@ export default function PromptOptimizer({ onOptimized, selectedHistory }: Prompt
     setIsOptimizing(true);
     setCopied(false);
     setOptimized('');
-    setDebate((prev) => prev.map((d) => ({ ...d, status: 'pending', text: '' })));
+    setDebate((prev) => prev.map((d) => ({ ...d, status: 'pending' as const, text: '' })));
 
     // Close any previous stream
     if (esRef.current) {
@@ -46,13 +46,16 @@ export default function PromptOptimizer({ onOptimized, selectedHistory }: Prompt
     es.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (data.stage) {
+        
+        // Handle stage updates (Discerner, Rubric, Expander, Ranker, Synthesizer)
+        if (data.stage && data.stage !== 'complete' && data.stage !== 'error') {
           setDebate((prev) =>
             prev.map((d) => {
               if (d.stage === data.stage) {
+                const newStatus = (data.status || 'running') as 'pending' | 'running' | 'done';
                 return {
                   ...d,
-                  status: data.status || 'running',
+                  status: newStatus,
                   text: data.text || d.text,
                 };
               }
@@ -60,10 +63,21 @@ export default function PromptOptimizer({ onOptimized, selectedHistory }: Prompt
             })
           );
         }
-        if (data.final_prompt) {
+        
+        // Handle completion event
+        if (data.stage === 'complete' || data.final_prompt) {
           setOptimized(data.final_prompt);
           onOptimized?.(cleanInput, data.final_prompt);
-          setDebate((prev) => prev.map((d) => ({ ...d, status: 'done' })));
+          setDebate((prev) => prev.map((d) => ({ ...d, status: 'done' as const })));
+          setIsOptimizing(false);
+          es.close();
+          esRef.current = null;
+        }
+        
+        // Handle error event
+        if (data.stage === 'error' || data.status === 'error') {
+          console.error('Optimization error:', data.text);
+          setDebate((prev) => prev.map((d) => ({ ...d, status: 'done' as const, text: d.text || 'Error occurred' })));
           setIsOptimizing(false);
           es.close();
           esRef.current = null;
