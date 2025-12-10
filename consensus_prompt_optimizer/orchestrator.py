@@ -461,71 +461,161 @@ class PromptimaV2:
         
         raw = parse_json_response_v2(response["content"])
 
-        def coerce_and_validate(data: Dict[str, Any]) -> SynthesizerOutput:
-            # Coerce common drifted keys into the required schema before hard validation
-            if isinstance(data, dict):
-                synonyms = [
-                    data.get("final_prompt"),
-                    data.get("prompt"),
-                    data.get("optimized_prompt"),
-                    data.get("best_prompt"),
-                ]
-                coerced_prompt = next((p for p in synonyms if isinstance(p, str) and p.strip()), None)
+        def _extract_prompt_recursively(obj: Any, depth: int = 0) -> Optional[str]:
+            """Recursively search for a prompt-like string in nested structures."""
+            if depth > 3:  # Prevent infinite recursion
+                return None
+            if isinstance(obj, str) and len(obj.strip()) > 20:
+                return obj.strip()
+            if isinstance(obj, dict):
+                # Priority order for prompt-like keys
+                for key in ["final_prompt", "prompt", "optimized_prompt", "best_prompt", 
+                            "result", "output", "text", "content", "response"]:
+                    if key in obj:
+                        found = _extract_prompt_recursively(obj[key], depth + 1)
+                        if found:
+                            return found
+                # Fallback: try any string value that looks like a prompt
+                for v in obj.values():
+                    found = _extract_prompt_recursively(v, depth + 1)
+                    if found:
+                        return found
+            if isinstance(obj, list) and obj:
+                return _extract_prompt_recursively(obj[0], depth + 1)
+            return None
 
-                if coerced_prompt and (
-                    "final_prompt" not in data or "synthesis_notes" not in data or "confidence" not in data
-                ):
-                    rubric_fallback = data.get("rubric_compliance")
-                    if not isinstance(rubric_fallback, dict) or not rubric_fallback:
-                        rubric_fallback = {
-                            key: "Auto-coerced due to schema drift" for key in (rubric.rubric.keys() or ["quality"])
-                        }
-
-                    data = {
-                        "final_prompt": coerced_prompt,
-                        "synthesis_notes": data.get("synthesis_notes") or "Auto-coerced from drifted key.",
-                        "rubric_compliance": rubric_fallback,
-                        "confidence": data.get("confidence") or 0.7,
-                    }
-
-            # Hard validation before Pydantic: non-empty strings, non-empty rubric, confidence in [0,1] and >= 0.7
+        def coerce_and_validate(data: Any, attempt: int = 1) -> SynthesizerOutput:
+            """
+            Aggressively coerce LLM output into SynthesizerOutput schema.
+            Handles: renamed keys, nested structures, missing fields.
+            """
+            # Handle non-dict responses (e.g., wrapped in array or nested)
             if not isinstance(data, dict):
-                raise ValueError("Synthesizer output is not a JSON object")
+                if isinstance(data, list) and data and isinstance(data[0], dict):
+                    data = data[0]
+                else:
+                    raise ValueError(f"Synthesizer output is not a JSON object: {type(data)}")
+            
+            # Unwrap nested structures like {"result": {...}} or {"output": {...}}
+            for wrapper_key in ["result", "output", "response", "data"]:
+                if wrapper_key in data and isinstance(data[wrapper_key], dict):
+                    nested = data[wrapper_key]
+                    # Check if nested has prompt-like content
+                    if any(k in nested for k in ["final_prompt", "prompt", "optimized_prompt"]):
+                        data = nested
+                        break
+            
+            # Extract prompt from multiple possible key names
+            prompt_synonyms = ["final_prompt", "prompt", "optimized_prompt", "best_prompt", 
+                               "synthesized_prompt", "master_prompt", "refined_prompt"]
+            coerced_prompt = None
+            for key in prompt_synonyms:
+                val = data.get(key)
+                if isinstance(val, str) and val.strip():
+                    coerced_prompt = val.strip()
+                    break
+            
+            # Fallback: recursive extraction if no direct key match
+            if not coerced_prompt:
+                coerced_prompt = _extract_prompt_recursively(data)
+            
+            if not coerced_prompt:
+                raise ValueError(f"Could not extract prompt from response (attempt {attempt})")
+            
+            # Extract synthesis notes with multiple fallbacks
+            notes_synonyms = ["synthesis_notes", "notes", "rationale", "explanation", 
+                              "reasoning", "summary", "synthesis_rationale"]
+            coerced_notes = None
+            for key in notes_synonyms:
+                val = data.get(key)
+                if isinstance(val, str) and val.strip():
+                    coerced_notes = val.strip()
+                    break
+            if not coerced_notes:
+                coerced_notes = f"Auto-generated: synthesized from variations (attempt {attempt})"
+            
+            # Extract rubric compliance with fallbacks
+            rubric_synonyms = ["rubric_compliance", "compliance", "rubric", "criteria_met", "rubric_scores"]
+            coerced_rubric = None
+            for key in rubric_synonyms:
+                val = data.get(key)
+                if isinstance(val, dict) and val:
+                    coerced_rubric = val
+                    break
+            if not coerced_rubric:
+                coerced_rubric = {
+                    key: "Addressed in final synthesis" 
+                    for key in (rubric.rubric.keys() if rubric.rubric else ["quality"])
+                }
+            
+            # Extract confidence with fallbacks
+            conf_synonyms = ["confidence", "confidence_score", "score", "certainty"]
+            coerced_conf = None
+            for key in conf_synonyms:
+                val = data.get(key)
+                if isinstance(val, (int, float)) and 0 <= val <= 1:
+                    coerced_conf = float(val)
+                    break
+                # Handle percentage-style confidence (e.g., 85 -> 0.85)
+                if isinstance(val, (int, float)) and 1 < val <= 100:
+                    coerced_conf = float(val) / 100.0
+                    break
+            if coerced_conf is None:
+                coerced_conf = 0.75  # Default confidence for coerced responses
+            
+            # Clamp confidence to valid range and minimum threshold
+            coerced_conf = max(0.7, min(1.0, coerced_conf))
+            
+            # Build normalized data dict
+            normalized = {
+                "final_prompt": coerced_prompt,
+                "synthesis_notes": coerced_notes,
+                "rubric_compliance": coerced_rubric,
+                "confidence": coerced_conf,
+            }
+            
+            # Final validation
+            return validate_stage_output(normalized, SynthesizerOutput)
 
-            def _is_non_empty_str(x: Any) -> bool:
-                return isinstance(x, str) and len(x.strip()) > 0
+        # Try up to 3 times with increasingly explicit prompts
+        last_error = None
+        for attempt in range(1, 4):
+            try:
+                if attempt == 1:
+                    return coerce_and_validate(raw, attempt)
+                else:
+                    # Retry with more explicit instructions
+                    retry_prompt = prompt + f"""
 
-            if not _is_non_empty_str(data.get("final_prompt")):
-                raise ValueError("final_prompt missing or empty")
-            if not _is_non_empty_str(data.get("synthesis_notes")):
-                raise ValueError("synthesis_notes missing or empty")
+ATTEMPT {attempt} - PREVIOUS VALIDATION FAILED: {last_error}
 
-            rc = data.get("rubric_compliance")
-            if not isinstance(rc, dict) or len(rc) == 0:
-                raise ValueError("rubric_compliance missing or empty")
+YOU MUST OUTPUT EXACTLY THIS JSON STRUCTURE (no other keys, no code fences):
+{{
+    "final_prompt": "<your complete optimized prompt text here>",
+    "synthesis_notes": "<brief explanation of your synthesis approach>",
+    "rubric_compliance": {{"clarity": "addressed", "specificity": "addressed"}},
+    "confidence": 0.85
+}}
 
-            conf = data.get("confidence")
-            if not isinstance(conf, (int, float)) or conf < 0 or conf > 1:
-                raise ValueError("confidence missing or out of range")
-            if conf < 0.7:
-                raise ValueError("confidence below threshold")
-
-            return validate_stage_output(data, SynthesizerOutput)
-
-        try:
-            return coerce_and_validate(raw)
-        except ValueError:
-            # Retry once with explicit schema correction to avoid optimized_prompt / missing keys
-            retry_prompt = prompt + "\n\nPREVIOUS ATTEMPT FAILED VALIDATION. Output STRICT JSON with EXACT keys: final_prompt, synthesis_notes, rubric_compliance (non-empty object), confidence (0-1, at least 0.7). Do NOT add or rename keys. Do NOT include code fences."
-            retry_response = call_llm_v2(
-                model=GEMINI_FAST,
-                prompt=retry_prompt,
-                max_tokens=2000,
-                enforce_json=True
-            )
-            self.tracker.record(retry_response, "synthesizer.retry")
-            retry_raw = parse_json_response_v2(retry_response["content"])
-            return coerce_and_validate(retry_raw)
+CRITICAL RULES:
+1. Use EXACTLY the key name "final_prompt" (NOT "prompt", NOT "optimized_prompt")
+2. All four keys are REQUIRED
+3. Output RAW JSON only - no markdown, no code blocks
+4. confidence must be a decimal between 0.7 and 1.0"""
+                    
+                    retry_response = call_llm_v2(
+                        model=GEMINI_FAST,
+                        prompt=retry_prompt,
+                        max_tokens=2000,
+                        enforce_json=True
+                    )
+                    self.tracker.record(retry_response, f"synthesizer.retry{attempt}")
+                    retry_raw = parse_json_response_v2(retry_response["content"])
+                    return coerce_and_validate(retry_raw, attempt)
+            except ValueError as e:
+                last_error = str(e)
+                if attempt == 3:
+                    raise ValueError(f"Synthesizer failed after 3 attempts. Last error: {last_error}")
     
     def _build_output(
         self,

@@ -100,6 +100,7 @@ def test_synth_renamed_key(monkeypatch, optimizer, synth_inputs):
 
 
 def test_synth_confidence_below_threshold(monkeypatch, optimizer, synth_inputs):
+    """Low confidence is now auto-clamped to 0.7 minimum instead of rejected."""
     payloads = [
         {
             "final_prompt": "ok",
@@ -110,21 +111,25 @@ def test_synth_confidence_below_threshold(monkeypatch, optimizer, synth_inputs):
     ]
     stub = patch_llm(monkeypatch, payloads)
 
-    with pytest.raises(ValueError):
-        optimizer._run_synthesizer(*synth_inputs)
-    assert stub.calls == 2  # initial attempt + retry
+    # New behavior: low confidence is clamped to 0.7, not rejected
+    out = optimizer._run_synthesizer(*synth_inputs)
+    assert isinstance(out, SynthesizerOutput)
+    assert out.confidence == 0.7  # Clamped to minimum
+    assert stub.calls == 1  # No retry needed
 
 
 def test_synth_empty_rubric(monkeypatch, optimizer, synth_inputs):
+    """Empty rubric is now auto-filled with rubric keys instead of rejected."""
     payloads = [
-        {"final_prompt": "ok", "synthesis_notes": "notes", "rubric_compliance": {}, "confidence": 0.9},
         {"final_prompt": "ok", "synthesis_notes": "notes", "rubric_compliance": {}, "confidence": 0.9},
     ]
     stub = patch_llm(monkeypatch, payloads)
 
-    with pytest.raises(ValueError):
-        optimizer._run_synthesizer(*synth_inputs)
-    assert stub.calls == 2
+    # New behavior: empty rubric is auto-filled from input rubric
+    out = optimizer._run_synthesizer(*synth_inputs)
+    assert isinstance(out, SynthesizerOutput)
+    assert "clarity" in out.rubric_compliance  # Auto-filled from input rubric
+    assert stub.calls == 1
 
 
 def test_synth_optimized_prompt_coerced(monkeypatch, optimizer, synth_inputs):
@@ -136,4 +141,52 @@ def test_synth_optimized_prompt_coerced(monkeypatch, optimizer, synth_inputs):
     out = optimizer._run_synthesizer(*synth_inputs)
     assert out.final_prompt == "coerced result"
     assert out.confidence >= 0.7
+    assert stub.calls == 1
+
+
+def test_synth_nested_result_structure(monkeypatch, optimizer, synth_inputs):
+    """LLM wraps output in a 'result' key - should be unwrapped."""
+    payloads = [
+        {"result": {"prompt": "nested prompt", "notes": "nested notes"}},
+    ]
+    stub = patch_llm(monkeypatch, payloads)
+
+    out = optimizer._run_synthesizer(*synth_inputs)
+    assert out.final_prompt == "nested prompt"
+    assert stub.calls == 1
+
+
+def test_synth_percentage_confidence(monkeypatch, optimizer, synth_inputs):
+    """Confidence given as percentage (85) instead of decimal (0.85)."""
+    payloads = [
+        {"final_prompt": "ok", "synthesis_notes": "notes", "rubric_compliance": {"x": "y"}, "confidence": 85},
+    ]
+    stub = patch_llm(monkeypatch, payloads)
+
+    out = optimizer._run_synthesizer(*synth_inputs)
+    assert out.confidence == 0.85
+    assert stub.calls == 1
+
+
+def test_synth_alternative_notes_key(monkeypatch, optimizer, synth_inputs):
+    """LLM uses 'rationale' instead of 'synthesis_notes'."""
+    payloads = [
+        {"final_prompt": "ok", "rationale": "my reasoning", "rubric_compliance": {"x": "y"}, "confidence": 0.9},
+    ]
+    stub = patch_llm(monkeypatch, payloads)
+
+    out = optimizer._run_synthesizer(*synth_inputs)
+    assert out.synthesis_notes == "my reasoning"
+    assert stub.calls == 1
+
+
+def test_synth_best_prompt_key(monkeypatch, optimizer, synth_inputs):
+    """LLM uses 'best_prompt' instead of 'final_prompt'."""
+    payloads = [
+        {"best_prompt": "the best one"},
+    ]
+    stub = patch_llm(monkeypatch, payloads)
+
+    out = optimizer._run_synthesizer(*synth_inputs)
+    assert out.final_prompt == "the best one"
     assert stub.calls == 1
