@@ -17,9 +17,8 @@ GEMINI_FAST = "gemini/gemini-2.0-flash"  # Updated to 2.0 (1.5 deprecated)
 # Groq-hosted Llama for Expander (FAST: 280 TPS, replaces DeepSeek)
 GROQ_EXPAND = "groq/llama-3.3-70b-versatile"
 
-# Legacy aliases for backward compatibility
-DEEPSEEK_EXPAND = "deepseek/deepseek-chat"  # Deprecated, use GROQ_EXPAND
-DEEPSEEK_CHEAP = "deepseek/deepseek-chat"   # Deprecated, use GROQ_EXPAND
+# Legacy: DeepSeek (removed - was too slow at 50 TPS)
+# Use GROQ_EXPAND for all expansion tasks
 
 # ============================================================================
 # PRICING (USD per token)
@@ -59,9 +58,6 @@ EXPANDER_TOKEN_LIMIT = 350  # Legacy v1 limit (not used in v2)
 # Groq token cap for Expander (Llama 3.3 70B has 32K output limit)
 GROQ_TOKEN_CAP = 4000       # Output limit for Expander stage
 
-# Legacy DeepSeek cap (deprecated)
-DEEPSEEK_TOKEN_CAP = 4000   # v2: DeepSeek output limit (~$0.0011 max)
-
 # ============================================================================
 # RATE LIMITING & COST CONTROLS (Production Safety)
 # ============================================================================
@@ -79,7 +75,6 @@ ENTERPRISE_TIER_LIMIT = None    # Unlimited for enterprise
 # ============================================================================
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")  # Primary for Expander
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")  # Legacy fallback
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")  # LiteLLM may need this set
 
 # ============================================================================

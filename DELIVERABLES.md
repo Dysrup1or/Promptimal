@@ -1,70 +1,64 @@
-# Consensus Prompt Optimizer - Complete Deliverables Package
+# Promptly 3.0 - Deliverables Package
 
 ## Project Summary
 
-**Objective**: Production-ready CLI-based "Consensus Prompt Optimizer" orchestrated with CrewAI and routed via LiteLLM.
+**Objective**: Production-ready AI prompt optimization platform with 5-stage Judge-then-Generate pipeline.
 
-**Status**: 60% Core Implementation ✅ Complete
+**Status**: ✅ PRODUCTION READY
 
-**Cost Constraint**: < $0.05 USD per run ✅ Verified ($0.042 in example)
+**Cost Constraint**: < $0.005 USD per run ✅ Ultra-cheap with Groq
 
-## 1. Project Code (Copy-Paste Ready)
+## 1. Architecture Overview
 
-All files are located in: `c:\Users\alexe\Promptimal\`
+### Technology Stack
+- **Runtime**: Python 3.11.9
+- **Web UI**: Streamlit
+- **LLM Integration**: LiteLLM
+- **Models**: Gemini 2.0 Flash (free) + Groq Llama 3.3 70B (fast, cheap)
+- **Schema Validation**: Pydantic 2.x
+- **Database**: SQLite (local) / PostgreSQL (production)
+
+### Pipeline (Judge-then-Generate)
+```
+User Idea → Discerner → CriticFirst → Expander → Ranker → Synthesizer → Final Prompt
+             (Gemini)    (Gemini)       (Groq)   (Gemini)  (Gemini)
+```
 
 ### Project Structure
 ```
-Promptimal/
+Promptly/
 ├── consensus_prompt_optimizer/
-│   ├── __init__.py              # Package initialization
-│   ├── config.py                # Model routing, pricing, settings
-│   ├── utils.py                 # Token/cost estimators, retry logic
-│   ├── llm_wrapper.py           # LiteLLM with DeepSeek enforcement
-│   ├── agents.py                # 4 CrewAI agents with JSON schemas
-│   ├── tasks.py                 # CrewAI task definitions
-│   └── main.py                  # CLI entry point + orchestration
+│   ├── __init__.py              # Package version: "0.1.0"
+│   ├── config.py                # Model routing, API keys, limits
+│   ├── schemas.py               # Pydantic output schemas
+│   ├── llm_wrapper_v2.py        # LiteLLM wrapper with caching
+│   ├── orchestrator.py          # Main pipeline (PromptimaV2)
+│   └── utils.py                 # Token estimators, retry logic
+├── auth/
+│   ├── __init__.py              # Auth module exports
+│   ├── database.py              # SQLite/PostgreSQL abstraction
+│   ├── models.py                # User, Session, Usage dataclasses
+│   ├── auth_service.py          # Authentication logic
+│   ├── usage_service.py         # Usage tracking
+│   └── logger.py                # Loguru configuration
 ├── tests/
-│   ├── __init__.py              # Tests package init
-│   ├── test_dry_run.py          # Dry-run validation tests
-│   └── test_integration.py      # Integration test placeholder
-├── .env.example                 # Environment variables template
-├── requirements.txt             # Python dependencies
-├── README.md                    # Complete documentation
-└── example_output.json          # Simulated run output
-
+│   ├── test_v2.py               # 27 unit tests
+│   └── test_integration.py      # API key tests
+├── app.py                       # Streamlit web application
+├── api_server.py                # FastAPI SSE endpoint
+├── admin_cli.py                 # Admin CLI (7 commands)
+└── landing-page/                # Next.js marketing site
 ```
 
-### Core Files Summary
+### Core Configuration
 
-**[config.py](file:///c:/Users/alexe/Promptimal/consensus_prompt_optimizer/config.py)** (66 lines)
-- Model routing: `GEMINI_FAST`, `DEEPSEEK_EXPAND`
-- Pricing map: DeepSeek $0.14/1M input, Gemini Flash free
-- Token limits: 2000 default, 350 for DeepSeek
+**Model Routing** (`config.py`):
+- `GEMINI_FAST = "gemini/gemini-2.0-flash"` - Free tier for 4 stages
+- `GROQ_EXPAND = "groq/llama-3.3-70b-versatile"` - Expander only ($0.59/$0.79 per 1M)
 
-**[utils.py](file:///c:/Users/alexe/Promptimal/consensus_prompt_optimizer/utils.py)** (135 lines)
-- `estimate_tokens()`, `estimate_cost_usd()`
-- `retry_with_backoff()` decorator (3 retries, exponential)
-- `log_event()` telemetry hook placeholder
-
-**[llm_wrapper.py](file:///c:/Users/alexe/Promptimal/consensus_prompt_optimizer/llm_wrapper.py)** (128 lines)
-- `call_llm()` with LiteLLM integration
-- Single DeepSeek call enforcement via global counter
-- JSON parsing with markdown cleanup
-
-**[agents.py](file:///c:/Users/alexe/Promptimal/consensus_prompt_optimizer/agents.py)** (205 lines)
-- Discerner: Parse ideas → `{intent, audience, constraints, success_criteria, ambiguous}`
-- Expander: 3 variations → `{A, B, C}` (role-based, CoT, role-immersive)
-- Critic: Evaluate → `{A, B, C}` with `{issues, rank}`
-- Synthesizer: Golden prompt → `{golden_prompt, rationale, token_est, cost_est_usd}`
-
-**[tasks.py](file:///c:/Users/alexe/Promptimal/consensus_prompt_optimizer/tasks.py)** (79 lines)
-- Factory functions for CrewAI task creation
-- Sequential workflow orchestration
-
-**[main.py](file:///c:/Users/alexe/Promptimal/consensus_prompt_optimizer/main.py)** (249 lines)
-- CLI with flags: `--idea`, `--batch`, `--dry-run`, `--max-tokens`, `--parallel`, `--seed`
-- Dry-run mode with cost estimation
-- Full workflow execution with telemetry
+**API Keys Required**:
+- `GEMINI_API_KEY` - Google AI Studio
+- `GROQ_API_KEY` - Groq Console
 
 ## 2. Exact Prompt Used (for Expander Agent)
 

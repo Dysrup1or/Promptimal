@@ -190,12 +190,6 @@ class TestTokenCounting:
 class TestCostCalculation:
     """Test cost calculation."""
     
-    def test_deepseek_cost(self):
-        cost = calculate_cost(1000, 500, "deepseek/deepseek-chat")
-        # Input: 1000/1M * 0.14 = 0.00014
-        # Output: 500/1M * 0.28 = 0.00014
-        assert 0.00025 < cost < 0.00035
-    
     def test_gemini_free(self):
         cost = calculate_cost(1000, 500, "gemini/gemini-2.0-flash")
         assert cost == 0.0
