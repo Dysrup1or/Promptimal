@@ -1,5 +1,5 @@
 """
-Promptly API Server - FastAPI with SSE support for real-time stage streaming.
+Catalyze API Server - FastAPI with SSE support for real-time stage streaming.
 
 Run with: uvicorn api_server:app --host 0.0.0.0 --port 8000 --reload
 """
@@ -30,13 +30,13 @@ from auth import AuthService, UsageService, get_stripe_service
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize services on startup."""
-    print("🚀 Promptly API Server starting...")
+    print("⚗️ Catalyze API Server starting...")
     yield
-    print("👋 Promptly API Server shutting down...")
+    print("👋 Catalyze API Server shutting down...")
 
 app = FastAPI(
-    title="Promptly API",
-    description="AI-Powered Prompt Engineering API with SSE streaming",
+    title="Catalyze API",
+    description="AI-Powered Prompt Transformation API with SSE streaming",
     version="3.0",
     lifespan=lifespan
 )
@@ -179,7 +179,7 @@ class StreamingOrchestrator:
 
 @app.get("/")
 async def root():
-    return {"status": "ok", "service": "Promptly API", "version": "3.0"}
+    return {"status": "ok", "service": "Catalyze API", "version": "3.0"}
 
 
 @app.get("/health")

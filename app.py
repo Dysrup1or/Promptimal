@@ -1,8 +1,8 @@
 """
-Promptly 3.0 - AI-Powered Prompt Engineering Platform
-=====================================================
-A sophisticated web UI for the Consensus Prompt Optimizer.
-Transform your ideas into bulletproof prompts.
+Catalyze - Transform Ideas into Bulletproof Prompts
+===================================================
+A sophisticated prompt optimization engine.
+Part of the Dysruption AI Suite.
 
 Run with: streamlit run app.py
 """
@@ -33,8 +33,8 @@ APP_URL = os.getenv("APP_URL", "http://localhost:8501")
 # PAGE CONFIGURATION
 # ============================================================================
 st.set_page_config(
-    page_title="Promptly - AI Prompt Engineering",
-    page_icon="⚡",
+    page_title="Catalyze - Transform Ideas into Prompts",
+    page_icon="⚗️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -64,26 +64,48 @@ st.markdown("""
         color: #c9d1d9;
     }
     
-    /* Header with cyan glow - LARGE CENTERED */
+    /* Header with grid aesthetic - CATALYZE branding */
     .main-header {
-        font-size: 4rem;
+        font-size: 4.5rem;
         font-weight: 700;
         color: #00F0FF;
         text-shadow: 0 0 40px rgba(0, 240, 255, 0.6), 0 0 80px rgba(0, 240, 255, 0.4), 0 0 120px rgba(0, 240, 255, 0.2);
         margin-bottom: 0;
-        padding: 40px 0 20px 0;
+        padding: 50px 0 15px 0;
         font-family: 'JetBrains Mono', monospace;
-        letter-spacing: 8px;
+        letter-spacing: 14px;
         text-align: center;
+        position: relative;
+        background: linear-gradient(180deg, transparent 0%, rgba(0, 240, 255, 0.02) 50%, transparent 100%);
+    }
+    
+    /* Grid overlay effect behind header */
+    .main-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 700px;
+        height: 100%;
+        background-image: 
+            linear-gradient(rgba(0, 240, 255, 0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 240, 255, 0.04) 1px, transparent 1px);
+        background-size: 25px 25px;
+        pointer-events: none;
+        z-index: -1;
+        mask-image: radial-gradient(ellipse 60% 80% at 50% 50%, black 40%, transparent 100%);
+        -webkit-mask-image: radial-gradient(ellipse 60% 80% at 50% 50%, black 40%, transparent 100%);
     }
     
     .sub-header {
         font-size: 0.95rem;
         color: #718096;
-        margin-top: 4px;
+        margin-top: 8px;
         margin-bottom: 20px;
         font-family: 'JetBrains Mono', monospace;
         text-align: center;
+        letter-spacing: 2px;
     }
     
     /* Card styling for output */
@@ -501,7 +523,7 @@ def show_reset_password_form():
 
 def show_auth_page():
     """Display login/register page."""
-    st.markdown('<p class="main-header">PROMPTLY</p>', unsafe_allow_html=True)
+    st.markdown('<p class="main-header">⚗️ CATALYZE</p>', unsafe_allow_html=True)
     st.markdown('<p class="sub-header">Transform your ideas into bulletproof prompts</p>', unsafe_allow_html=True)
     
     st.markdown("")
@@ -581,7 +603,7 @@ def show_auth_page():
     # Footer
     st.markdown("""
     <div class="footer">
-        Promptly 3.0 | AI-Powered Prompt Engineering | Secure & Private
+        Catalyze | AI-Powered Prompt Transformation | Secure & Private
     </div>
     """, unsafe_allow_html=True)
 
@@ -610,8 +632,8 @@ show_details = False
 
 with st.sidebar:
     # Logo/Brand
-    st.markdown("### Promptly")
-    st.markdown('<span style="color: #8b949e; font-size: 0.85rem;">AI-Powered Prompt Engineering</span>', unsafe_allow_html=True)
+    st.markdown("### ⚗️ Catalyze")
+    st.markdown('<span style="color: #8b949e; font-size: 0.85rem;">Prompt Transformation Engine</span>', unsafe_allow_html=True)
     
     st.markdown("---")
     
@@ -677,7 +699,7 @@ with st.sidebar:
 # ============================================================================
 
 # Centered header
-st.markdown('<p class="main-header" style="text-align: center; font-size: 3.5rem;">PROMPTLY</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-header" style="text-align: center; font-size: 4rem;">⚗️ CATALYZE</p>', unsafe_allow_html=True)
 
 st.markdown("")
 st.markdown("")
@@ -885,7 +907,7 @@ if 'last_result' in st.session_state:
             st.download_button(
                 label="Download Full JSON",
                 data=json.dumps(result, indent=2),
-                file_name=f"promptly_output_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                file_name=f"catalyze_output_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
                 mime="application/json"
             )
 
@@ -893,12 +915,12 @@ if 'last_result' in st.session_state:
 # ============================================================================
 # UPGRADE MODAL (Stripe Integration)
 # ============================================================================
-@st.dialog("Upgrade to Promptly Pro")
+@st.dialog("Upgrade to Catalyze Pro")
 def show_upgrade_dialog():
     st.markdown("""
     ### Unlock More Power
     
-    **Promptly Pro** gives you:
+    **Catalyze Pro** gives you:
     
     → **500 optimizations/month** (vs 50 free)  
     → Priority processing  
@@ -968,7 +990,7 @@ def show_upgrade_dialog():
 # Handle upgrade success/cancel from URL params
 query_params = st.query_params
 if query_params.get("upgrade") == "success":
-    st.success("🎉 Welcome to Promptly Pro! Your account has been upgraded.")
+    st.success("🎉 Welcome to Catalyze Pro! Your account has been upgraded.")
     # Refresh user from database to get updated tier
     updated_user = auth_service.get_user_by_id(current_user.id)
     if updated_user:
@@ -991,6 +1013,6 @@ if st.session_state.get('show_upgrade', False):
 # ============================================================================
 st.markdown("""
 <div class="footer">
-    Promptly 3.0 | AI-Powered Prompt Engineering | Judge-then-Generate Pipeline
+    Catalyze | Prompt Transformation Engine | Judge-then-Generate Pipeline
 </div>
 """, unsafe_allow_html=True)

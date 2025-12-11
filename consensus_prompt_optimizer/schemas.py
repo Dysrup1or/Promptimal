@@ -1,5 +1,5 @@
 """
-Pydantic schemas for Promptly v2 - Judge-then-Generate workflow.
+Pydantic schemas for Catalyze - Judge-then-Generate workflow.
 Provides strict validation for all stage outputs.
 
 Schemas are designed to work with the orchestrator's prompt templates.

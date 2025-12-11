@@ -2,7 +2,7 @@
 
 ## Overview
 
-Promptly now supports Stripe subscription billing for Pro tier upgrades ($9.99/month).
+Catalyze now supports Stripe subscription billing for Pro tier upgrades ($9.99/month).
 
 ## ⚠️ IMPORTANT: Webhook Deployment
 
@@ -44,8 +44,8 @@ APP_URL=https://your-app.railway.app   # Your production URL
 1. Go to [Stripe Dashboard](https://dashboard.stripe.com) → Products
 2. Click **+ Add Product**
 3. Fill in:
-   - **Name:** Promptly Pro
-   - **Description:** 500 optimizations/month, priority processing
+   - **Name:** Catalyze Pro
+   - **Description:** 500 prompt transformations/month, priority processing
 4. Under Pricing:
    - Select **Recurring**
    - Price: `$9.99`

@@ -1,5 +1,5 @@
 # ==============================================
-# PROMPTLY 3.0 - DEPENDENCIES
+# CATALYZE - DEPENDENCIES
 # ==============================================
 # Core dependencies for production deployment
 # ==============================================

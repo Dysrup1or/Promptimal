@@ -1,10 +1,10 @@
-# Consensus Prompt Optimizer
+# ⚗️ Catalyze - Prompt Transformation Engine
 
-A production-ready CLI tool that uses multi-agent consensus (CrewAI + LiteLLM) to optimize prompts for quality, clarity, and anti-hallucination properties while maintaining strict cost constraints (< $0.05 per run).
+A production-ready AI-powered platform that transforms raw prompt ideas into bulletproof, production-ready prompts using multi-stage consensus optimization.
 
 ## Overview
 
-The Consensus Prompt Optimizer orchestrates 4 AI agents to transform a raw prompt idea into a production-ready "golden prompt":
+Catalyze orchestrates 5 AI stages to transform a raw prompt idea into a production-ready "golden prompt":
 
 1. **Discerner** (Gemini Flash) - Parses raw ideas into structured components
 2. **Expander** (DeepSeek, single call ≤350 tokens) - Generates 3 prompt variations (role-based, CoT, role-immersive)

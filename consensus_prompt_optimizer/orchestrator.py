@@ -1,5 +1,5 @@
 """
-Orchestrator for Promptly v2 - Main pipeline with Judge-then-Generate workflow.
+Orchestrator for Catalyze - Main pipeline with Judge-then-Generate workflow.
 
 Pipeline Flow:
 1. Discerner    → Analyze the idea (Gemini Flash)
@@ -853,7 +853,7 @@ CRITICAL RULES:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Promptly v2 - Judge-then-Generate Prompt Optimizer"
+        description="Catalyze - Judge-then-Generate Prompt Transformer"
     )
     parser.add_argument("idea", nargs="?", help="The prompt idea to optimize")
     parser.add_argument("--file", "-f", help="Read idea from file")

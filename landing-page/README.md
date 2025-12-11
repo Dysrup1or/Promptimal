@@ -1,8 +1,8 @@
-# Promptly - AI-Powered Prompt Engineering
+# ⚗️ Catalyze - Prompt Transformation Engine
 
 ## 🚀 One-Click Deploy
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/YOUR_USERNAME/promptly-landing)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/YOUR_USERNAME/catalyze-landing)
 
 ## 📦 Tech Stack
 

@@ -1,5 +1,5 @@
 """
-Stripe integration service for Promptly.
+Stripe integration service for Catalyze.
 Handles subscription checkout, webhooks, and customer management.
 """
 

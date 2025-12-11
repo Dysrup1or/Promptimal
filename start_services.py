@@ -22,7 +22,7 @@ def main():
     streamlit_port = os.getenv("PORT", "8501")
     api_port = os.getenv("API_PORT", "8000")
     
-    print(f"🚀 Starting Promptly Services...")
+    print(f"⚗️ Starting Catalyze Services...")
     print(f"   Streamlit: port {streamlit_port}")
     print(f"   API Server: port {api_port}")
     

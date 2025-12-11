@@ -1,17 +1,17 @@
 @echo off
 REM ============================================
-REM Promptly 3.0 - UI Startup Script (Windows)
+REM Catalyze 3.0 - UI Startup Script (Windows)
 REM ============================================
 
 echo.
-echo  ____                            _   _       
-echo ^|  _ \ _ __ ___  _ __ ___  _ __ ^| ^|_^| ^|_   _ 
-echo ^| ^|_) ^| '__/ _ \^| '_ ` _ \^| '_ \^| __^| ^| ^| ^| ^|
-echo ^|  __/^| ^| ^| (_) ^| ^| ^| ^| ^| ^| ^|_) ^| ^|_^| ^| ^|_^| ^|
-echo ^|_^|   ^|_^|  \___/^|_^| ^|_^| ^|_^| .__/ \__^|_^|\__, ^|
-echo                            ^|_^|          ^|___/ 
+echo    ____      _        _                  
+echo   / ___^|__ _^| ^|_ __ _^| ^|_   _ _______   
+echo  ^| ^|   / _` ^| __/ _` ^| ^| ^| ^| ^|_  / _ \  
+echo  ^| ^|__^| (_^| ^| ^|^| (_^| ^| ^| ^|_^| ^|/ /  __/  
+echo   \____\__,_^|\__\__,_^|_^|\__, /___\___|  
+echo                         ^|___/           
 echo.
-echo Starting Promptly 3.0 - AI-Powered Prompt Engineering Platform...
+echo Starting Catalyze - Prompt Transformation Engine...
 echo.
 
 REM Check if streamlit is installed

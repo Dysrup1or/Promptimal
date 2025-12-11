@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Admin CLI for Promptly.
+Admin CLI for Catalyze.
 Provides administrative commands for user management and system monitoring.
 
 Usage:
@@ -322,7 +322,7 @@ def reset_password(args):
 def main():
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
-        description="Promptly Admin CLI",
+        description="Catalyze Admin CLI",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__
     )

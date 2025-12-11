@@ -1,16 +1,16 @@
 # ============================================
-# Promptly 3.0 - UI Startup Script (PowerShell)
+# Catalyze 3.0 - UI Startup Script (PowerShell)
 # ============================================
 
 Write-Host ""
-Write-Host "  ____                            _   _       " -ForegroundColor Cyan
-Write-Host " |  _ \ _ __ ___  _ __ ___  _ __ | |_| |_   _ " -ForegroundColor Cyan
-Write-Host " | |_) | '__/ _ \| '_ ` _ \| '_ \| __| | | | |" -ForegroundColor Cyan
-Write-Host " |  __/| | | (_) | | | | | | |_) | |_| | |_| |" -ForegroundColor Cyan
-Write-Host " |_|   |_|  \___/|_| |_| |_| .__/ \__|_|\__, |" -ForegroundColor Cyan
-Write-Host "                           |_|          |___/ " -ForegroundColor Cyan
+Write-Host "   ____      _        _                  " -ForegroundColor Cyan
+Write-Host "  / ___|__ _| |_ __ _| |_   _ _______   " -ForegroundColor Cyan
+Write-Host " | |   / _` | __/ _` | | | | |_  / _ \  " -ForegroundColor Cyan
+Write-Host " | |__| (_| | || (_| | | |_| |/ /  __/  " -ForegroundColor Cyan
+Write-Host "  \____\__,_|\__\__,_|_|\__, /___\___|  " -ForegroundColor Cyan
+Write-Host "                        |___/           " -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Starting Promptly 3.0 - AI-Powered Prompt Engineering Platform..." -ForegroundColor Green
+Write-Host "Starting Catalyze - Prompt Transformation Engine..." -ForegroundColor Green
 Write-Host ""
 
 # Check if streamlit is installed
