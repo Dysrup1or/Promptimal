@@ -4,6 +4,22 @@
 
 Promptly now supports Stripe subscription billing for Pro tier upgrades ($9.99/month).
 
+## ⚠️ IMPORTANT: Webhook Deployment
+
+The Stripe webhook endpoint (`/api/stripe/webhook`) runs on the FastAPI server (`api_server.py`), which is **separate** from the Streamlit app. For production with webhooks, you have two options:
+
+### Option A: Two Railway Services (Recommended)
+1. Deploy the main Streamlit app (existing service)
+2. Create a second Railway service for the API server:
+   - Use `uvicorn api_server:app --host 0.0.0.0 --port $PORT`
+   - Set webhook URL to this service's domain
+
+### Option B: Single Service with Both (Advanced)
+Use `start_services.py` which runs both services, but note that Railway only exposes one port externally. You'd need an internal service mesh or reverse proxy.
+
+### Option C: Use Stripe Checkout Without Webhooks (Simplest)
+The checkout flow works without webhooks - users are redirected back with `?upgrade=success`. You can manually sync tiers via admin CLI until webhooks are configured.
+
 ## Required Environment Variables
 
 Add these to your Railway project (or `.env` for local testing):
