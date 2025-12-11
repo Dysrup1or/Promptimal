@@ -463,28 +463,71 @@ class PromptimaV2:
         
         raw = parse_json_response_v2(response["content"])
 
+        # ==================================================================
+        # BULLETPROOF SYNTHESIZER COERCION (v3)
+        # Handles: missing keys, renamed keys, garbage prompts, nested data
+        # ==================================================================
+        
+        MIN_PROMPT_LENGTH = 50  # Minimum chars for a valid prompt
+        
         def _extract_prompt_recursively(obj: Any, depth: int = 0) -> Optional[str]:
             """Recursively search for a prompt-like string in nested structures."""
-            if depth > 3:  # Prevent infinite recursion
+            if depth > 5:  # Prevent infinite recursion
                 return None
-            if isinstance(obj, str) and len(obj.strip()) > 20:
+            if isinstance(obj, str) and len(obj.strip()) >= MIN_PROMPT_LENGTH:
                 return obj.strip()
             if isinstance(obj, dict):
                 # Priority order for prompt-like keys
                 for key in ["final_prompt", "prompt", "optimized_prompt", "best_prompt", 
+                            "synthesized_prompt", "refined_prompt", "master_prompt",
                             "result", "output", "text", "content", "response"]:
                     if key in obj:
                         found = _extract_prompt_recursively(obj[key], depth + 1)
-                        if found:
+                        if found and len(found) >= MIN_PROMPT_LENGTH:
                             return found
                 # Fallback: try any string value that looks like a prompt
                 for v in obj.values():
+                    if isinstance(v, str) and len(v.strip()) >= MIN_PROMPT_LENGTH:
+                        return v.strip()
                     found = _extract_prompt_recursively(v, depth + 1)
-                    if found:
+                    if found and len(found) >= MIN_PROMPT_LENGTH:
                         return found
             if isinstance(obj, list) and obj:
                 return _extract_prompt_recursively(obj[0], depth + 1)
             return None
+        
+        def _is_valid_prompt(text: str) -> bool:
+            """Check if a string looks like a valid prompt, not garbage."""
+            if not text or len(text.strip()) < MIN_PROMPT_LENGTH:
+                return False
+            # Check for nonsensical patterns
+            garbage_patterns = [
+                "what are we building",
+                "i don't understand",
+                "please clarify",
+                "not sure what",
+                "can you explain",
+                "hey!",
+                "hello!",
+            ]
+            lower_text = text.lower()
+            if any(pattern in lower_text for pattern in garbage_patterns):
+                return False
+            # Check for minimum word count
+            word_count = len(text.split())
+            if word_count < 10:
+                return False
+            return True
+        
+        def _get_best_variation_prompt() -> str:
+            """Fallback: return the best-ranked variation as final prompt."""
+            # Sort by rank and return the best one
+            vars_by_rank = sorted([
+                (rankings.A.rank, expansions.A.prompt),
+                (rankings.B.rank, expansions.B.prompt),
+                (rankings.C.rank, expansions.C.prompt)
+            ], key=lambda x: x[0])
+            return vars_by_rank[0][1]  # Best ranked variation
 
         def coerce_and_validate(data: Any, attempt: int = 1) -> SynthesizerOutput:
             """
@@ -521,8 +564,14 @@ class PromptimaV2:
             if not coerced_prompt:
                 coerced_prompt = _extract_prompt_recursively(data)
             
-            if not coerced_prompt:
-                raise ValueError(f"Could not extract prompt from response (attempt {attempt})")
+            # CRITICAL: Validate prompt quality, use fallback if garbage
+            if not coerced_prompt or not _is_valid_prompt(coerced_prompt):
+                fallback_prompt = _get_best_variation_prompt()
+                if _is_valid_prompt(fallback_prompt):
+                    coerced_prompt = fallback_prompt
+                    log_event("synthesizer.fallback", {"reason": "invalid_prompt_extracted"})
+                else:
+                    raise ValueError(f"Extracted prompt is invalid and fallback failed (attempt {attempt}): '{coerced_prompt[:100] if coerced_prompt else 'None'}'")
             
             # Extract synthesis notes with multiple fallbacks
             notes_synonyms = ["synthesis_notes", "notes", "rationale", "explanation", 
@@ -617,7 +666,17 @@ CRITICAL RULES:
             except ValueError as e:
                 last_error = str(e)
                 if attempt == 3:
-                    raise ValueError(f"Synthesizer failed after 3 attempts. Last error: {last_error}")
+                    # ULTIMATE FALLBACK: Use best variation directly
+                    log_event("synthesizer.ultimate_fallback", {"error": str(e)})
+                    fallback_prompt = _get_best_variation_prompt()
+                    if fallback_prompt and len(fallback_prompt) >= MIN_PROMPT_LENGTH:
+                        return SynthesizerOutput(
+                            final_prompt=fallback_prompt,
+                            synthesis_notes=f"Auto-fallback: Used best-ranked variation after synthesis failed ({last_error[:100]})",
+                            rubric_compliance={key: "Inherited from variation" for key in (rubric.rubric.keys() if rubric.rubric else ["quality"])},
+                            confidence=0.7
+                        )
+                    raise ValueError(f"Synthesizer failed after 3 attempts and fallback failed. Last error: {last_error}")
     
     def _build_output(
         self,

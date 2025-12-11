@@ -353,6 +353,39 @@ class TestMinifyJson:
         assert "  " not in result
 
 
+class TestSynthesizerCoercion:
+    """Test synthesizer edge case handling."""
+    
+    def test_synthesizer_output_with_all_fields(self):
+        """Test that SynthesizerOutput accepts valid data."""
+        valid_data = {
+            "final_prompt": "This is a valid prompt with enough characters to pass the minimum length requirement for testing purposes.",
+            "synthesis_notes": "Combined elements from variations",
+            "rubric_compliance": {"clarity": "addressed"},
+            "confidence": 0.85
+        }
+        output = SynthesizerOutput.model_validate(valid_data)
+        assert output.final_prompt == valid_data["final_prompt"]
+        assert output.confidence == 0.85
+    
+    def test_synthesizer_output_requires_fields(self):
+        """Test that SynthesizerOutput rejects incomplete data."""
+        incomplete = {"final_prompt": "Just a prompt"}
+        with pytest.raises(Exception):  # Pydantic ValidationError
+            SynthesizerOutput.model_validate(incomplete)
+    
+    def test_dry_run_synthesizer_has_all_fields(self):
+        """Test that dry run produces complete output."""
+        optimizer = PromptimaV2(dry_run=True)
+        result = optimizer.run("Test idea for synthesizer")
+        synth = result.get("final_synthesis", {})
+        # Output JSON uses 'prompt' and 'notes' as abbreviated keys
+        assert "prompt" in synth
+        assert "notes" in synth
+        assert "confidence" in synth
+        assert "rubric_compliance" in synth
+
+
 # ============================================================================
 # RUN TESTS
 # ============================================================================
