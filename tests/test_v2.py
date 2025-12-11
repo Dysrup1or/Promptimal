@@ -256,6 +256,19 @@ class TestJsonParsing:
         content = '{"key": "value",}'
         result = parse_json_response_v2(content)
         assert result["key"] == "value"
+    
+    def test_text_before_json(self):
+        """Test JSON extraction when LLM adds preamble text."""
+        content = 'Here is the JSON:\n{"key": "value"}'
+        result = parse_json_response_v2(content)
+        assert result["key"] == "value"
+    
+    def test_python_booleans(self):
+        """Test fixing Python-style booleans."""
+        content = '{"enabled": True, "disabled": False}'
+        result = parse_json_response_v2(content)
+        assert result["enabled"] == True
+        assert result["disabled"] == False
 
 
 class TestTokenTracker:

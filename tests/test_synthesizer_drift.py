@@ -42,7 +42,7 @@ def optimizer():
 
 @pytest.fixture
 def synth_inputs():
-    idea = "Test idea"
+    idea = "Test idea for generating a comprehensive prompt that helps users with their tasks effectively"
     discern = DiscernOutput(
         task_type="generation",
         complexity="moderate",
@@ -56,10 +56,23 @@ def synth_inputs():
         checklist=["includes clarity"],
         red_flags=["vague"],
     )
+    # Use prompts long enough to pass validation (50+ chars, 10+ words)
     expansions = ExpansionsOutput(
-        A=ExpansionVariant(prompt="Prompt A", notes="note A", checklist_score="1/1"),
-        B=ExpansionVariant(prompt="Prompt B", notes="note B", checklist_score="1/1"),
-        C=ExpansionVariant(prompt="Prompt C", notes="note C", checklist_score="1/1"),
+        A=ExpansionVariant(
+            prompt="You are a helpful assistant. Please analyze this request carefully and provide a well-structured response that addresses all the key points mentioned.",
+            notes="note A",
+            checklist_score="1/1"
+        ),
+        B=ExpansionVariant(
+            prompt="As an expert in this domain, carefully consider the following task and provide a detailed step-by-step solution that covers all requirements.",
+            notes="note B",
+            checklist_score="1/1"
+        ),
+        C=ExpansionVariant(
+            prompt="You are a senior professional. Analyze this task thoroughly and deliver a comprehensive response that demonstrates expertise and attention to detail.",
+            notes="note C",
+            checklist_score="1/1"
+        ),
     )
     rankings = RankingsOutput(
         A=RankerVariant(rank=2, score=0.7),
@@ -75,27 +88,33 @@ def patch_llm(monkeypatch, payloads):
     return stub
 
 
+# Valid test prompt that passes the minimum length (50+ chars) and word count (10+ words) checks
+VALID_TEST_PROMPT = "You are an expert assistant helping with this task. Please analyze the requirements carefully and provide a comprehensive response that addresses all key points."
+
+SHORT_VALID_PROMPT = "This is a sufficiently long test prompt that should pass the minimum length validation requirements for the synthesizer."
+
+
 def test_synth_only_prompt_field(monkeypatch, optimizer, synth_inputs):
     payloads = [
-        {"prompt": "foo"},  # coerced
+        {"prompt": VALID_TEST_PROMPT},  # coerced
     ]
     stub = patch_llm(monkeypatch, payloads)
 
     out = optimizer._run_synthesizer(*synth_inputs)
     assert isinstance(out, SynthesizerOutput)
-    assert out.final_prompt == "foo"
+    assert out.final_prompt == VALID_TEST_PROMPT
     assert stub.calls == 1  # coerced without retry
 
 
 def test_synth_renamed_key(monkeypatch, optimizer, synth_inputs):
     payloads = [
-        {"optimized_prompt": "bad"},  # coerced alias
+        {"optimized_prompt": VALID_TEST_PROMPT},  # coerced alias
     ]
     stub = patch_llm(monkeypatch, payloads)
 
     out = optimizer._run_synthesizer(*synth_inputs)
     assert isinstance(out, SynthesizerOutput)
-    assert out.final_prompt == "bad"
+    assert out.final_prompt == VALID_TEST_PROMPT
     assert stub.calls == 1
 
 
@@ -103,7 +122,7 @@ def test_synth_confidence_below_threshold(monkeypatch, optimizer, synth_inputs):
     """Low confidence is now auto-clamped to 0.7 minimum instead of rejected."""
     payloads = [
         {
-            "final_prompt": "ok",
+            "final_prompt": VALID_TEST_PROMPT,
             "synthesis_notes": "notes",
             "rubric_compliance": {"c": "done"},
             "confidence": 0.6,
@@ -121,7 +140,7 @@ def test_synth_confidence_below_threshold(monkeypatch, optimizer, synth_inputs):
 def test_synth_empty_rubric(monkeypatch, optimizer, synth_inputs):
     """Empty rubric is now auto-filled with rubric keys instead of rejected."""
     payloads = [
-        {"final_prompt": "ok", "synthesis_notes": "notes", "rubric_compliance": {}, "confidence": 0.9},
+        {"final_prompt": VALID_TEST_PROMPT, "synthesis_notes": "notes", "rubric_compliance": {}, "confidence": 0.9},
     ]
     stub = patch_llm(monkeypatch, payloads)
 
@@ -134,12 +153,12 @@ def test_synth_empty_rubric(monkeypatch, optimizer, synth_inputs):
 
 def test_synth_optimized_prompt_coerced(monkeypatch, optimizer, synth_inputs):
     payloads = [
-        {"optimized_prompt": "coerced result"},
+        {"optimized_prompt": VALID_TEST_PROMPT},
     ]
     stub = patch_llm(monkeypatch, payloads)
 
     out = optimizer._run_synthesizer(*synth_inputs)
-    assert out.final_prompt == "coerced result"
+    assert out.final_prompt == VALID_TEST_PROMPT
     assert out.confidence >= 0.7
     assert stub.calls == 1
 
@@ -147,19 +166,19 @@ def test_synth_optimized_prompt_coerced(monkeypatch, optimizer, synth_inputs):
 def test_synth_nested_result_structure(monkeypatch, optimizer, synth_inputs):
     """LLM wraps output in a 'result' key - should be unwrapped."""
     payloads = [
-        {"result": {"prompt": "nested prompt", "notes": "nested notes"}},
+        {"result": {"prompt": VALID_TEST_PROMPT, "notes": "nested notes"}},
     ]
     stub = patch_llm(monkeypatch, payloads)
 
     out = optimizer._run_synthesizer(*synth_inputs)
-    assert out.final_prompt == "nested prompt"
+    assert out.final_prompt == VALID_TEST_PROMPT
     assert stub.calls == 1
 
 
 def test_synth_percentage_confidence(monkeypatch, optimizer, synth_inputs):
     """Confidence given as percentage (85) instead of decimal (0.85)."""
     payloads = [
-        {"final_prompt": "ok", "synthesis_notes": "notes", "rubric_compliance": {"x": "y"}, "confidence": 85},
+        {"final_prompt": VALID_TEST_PROMPT, "synthesis_notes": "notes", "rubric_compliance": {"x": "y"}, "confidence": 85},
     ]
     stub = patch_llm(monkeypatch, payloads)
 
@@ -171,7 +190,7 @@ def test_synth_percentage_confidence(monkeypatch, optimizer, synth_inputs):
 def test_synth_alternative_notes_key(monkeypatch, optimizer, synth_inputs):
     """LLM uses 'rationale' instead of 'synthesis_notes'."""
     payloads = [
-        {"final_prompt": "ok", "rationale": "my reasoning", "rubric_compliance": {"x": "y"}, "confidence": 0.9},
+        {"final_prompt": VALID_TEST_PROMPT, "rationale": "my reasoning", "rubric_compliance": {"x": "y"}, "confidence": 0.9},
     ]
     stub = patch_llm(monkeypatch, payloads)
 
@@ -183,10 +202,10 @@ def test_synth_alternative_notes_key(monkeypatch, optimizer, synth_inputs):
 def test_synth_best_prompt_key(monkeypatch, optimizer, synth_inputs):
     """LLM uses 'best_prompt' instead of 'final_prompt'."""
     payloads = [
-        {"best_prompt": "the best one"},
+        {"best_prompt": VALID_TEST_PROMPT},
     ]
     stub = patch_llm(monkeypatch, payloads)
 
     out = optimizer._run_synthesizer(*synth_inputs)
-    assert out.final_prompt == "the best one"
+    assert out.final_prompt == VALID_TEST_PROMPT
     assert stub.calls == 1

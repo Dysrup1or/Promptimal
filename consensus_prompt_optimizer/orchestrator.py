@@ -343,7 +343,7 @@ class PromptimaV2:
         discern: DiscernOutput, 
         rubric: RubricOutput
     ) -> ExpansionsOutput:
-        """Stage 3: Generate variations with rubric guidance (DeepSeek - SINGLE CALL)."""
+        """Stage 3: Generate variations with rubric guidance (Groq - SINGLE CALL)."""
         log_event("stage.expander.start", {})
         
         prompt = EXPANDER_PROMPT.format(
@@ -361,18 +361,134 @@ class PromptimaV2:
                 C=ExpansionVariant(prompt="Prompt C", notes="structured", checklist_score="6/6")
             )
         
-        # Use Groq Llama 3.3 70B for ultra-fast expansion (280+ TPS)
-        # This is the SINGLE non-Gemini call per run
-        response = call_llm_v2(
-            model=GROQ_EXPAND,  # Groq Llama 3.3 70B - fast & high quality
-            prompt=prompt,
-            max_tokens=GROQ_TOKEN_CAP,  # 4000 token cap
-            enforce_json=True
-        )
-        self.tracker.record(response, "expander")
+        # ==================================================================
+        # BULLETPROOF EXPANDER (retry + coercion)
+        # ==================================================================
         
-        raw = parse_json_response_v2(response["content"])
-        return validate_stage_output(raw, ExpansionsOutput)
+        def _coerce_expansion(data: Any) -> ExpansionsOutput:
+            """Coerce various response formats into ExpansionsOutput."""
+            if not isinstance(data, dict):
+                if isinstance(data, list) and len(data) >= 3:
+                    # Handle array format: [{...}, {...}, {...}]
+                    data = {"A": data[0], "B": data[1], "C": data[2]}
+                else:
+                    raise ValueError(f"Expander output is not a dict: {type(data)}")
+            
+            # Handle various key naming conventions
+            key_maps = [
+                ("A", ["A", "a", "variation_a", "variant_a", "1", "first"]),
+                ("B", ["B", "b", "variation_b", "variant_b", "2", "second"]),
+                ("C", ["C", "c", "variation_c", "variant_c", "3", "third"]),
+            ]
+            
+            normalized = {}
+            for target_key, synonyms in key_maps:
+                for syn in synonyms:
+                    if syn in data:
+                        normalized[target_key] = data[syn]
+                        break
+            
+            if len(normalized) < 3:
+                raise ValueError(f"Could not find 3 variations. Found keys: {list(data.keys())}")
+            
+            # Normalize each variation
+            for key in ["A", "B", "C"]:
+                var = normalized[key]
+                if isinstance(var, str):
+                    # Handle case where variation is just a string prompt
+                    normalized[key] = {
+                        "prompt": var,
+                        "notes": f"Variation {key}",
+                        "checklist_score": "N/A"
+                    }
+                elif isinstance(var, dict):
+                    # Ensure required fields exist
+                    prompt_keys = ["prompt", "text", "content", "variation", "output"]
+                    found_prompt = None
+                    for pk in prompt_keys:
+                        if pk in var and isinstance(var[pk], str):
+                            found_prompt = var[pk]
+                            break
+                    if not found_prompt:
+                        # Last resort: use the whole dict as string
+                        found_prompt = str(var)
+                    
+                    normalized[key] = {
+                        "prompt": found_prompt,
+                        "notes": var.get("notes", var.get("approach", var.get("description", f"Variation {key}"))),
+                        "checklist_score": var.get("checklist_score", var.get("score", "N/A"))
+                    }
+            
+            return validate_stage_output(normalized, ExpansionsOutput)
+        
+        def _generate_fallback_variations() -> ExpansionsOutput:
+            """Generate simple fallback variations from the idea."""
+            log_event("expander.fallback", {"reason": "all_retries_failed"})
+            
+            # Create basic variations based on the idea
+            base_prompt = f"You are an expert assistant. {idea[:300]}"
+            
+            return ExpansionsOutput(
+                A=ExpansionVariant(
+                    prompt=f"[CONCISE] {base_prompt}\n\nProvide a clear, direct response.",
+                    notes="Simple concise approach (fallback)",
+                    checklist_score="Fallback"
+                ),
+                B=ExpansionVariant(
+                    prompt=f"[DETAILED] {base_prompt}\n\nThink through this step-by-step:\n1. First, analyze the request\n2. Then, develop your approach\n3. Finally, deliver a comprehensive response",
+                    notes="Chain-of-thought approach (fallback)",
+                    checklist_score="Fallback"
+                ),
+                C=ExpansionVariant(
+                    prompt=f"[STRUCTURED] You are a senior expert in this domain.\n\n## Task\n{idea[:300]}\n\n## Requirements\n- Be thorough and accurate\n- Cite sources when possible\n- Flag any assumptions\n\n## Output Format\nProvide a well-organized response.",
+                    notes="Structured expert approach (fallback)",
+                    checklist_score="Fallback"
+                )
+            )
+        
+        # Try up to 3 times with increasingly explicit prompts
+        last_error = None
+        for attempt in range(1, 4):
+            try:
+                if attempt == 1:
+                    current_prompt = prompt
+                else:
+                    # Add explicit retry instructions
+                    current_prompt = prompt + f"""
+
+ATTEMPT {attempt} - PREVIOUS PARSE FAILED: {last_error}
+
+YOU MUST OUTPUT EXACTLY THIS JSON FORMAT (no markdown, no code fences, just raw JSON):
+{{
+  "A": {{"prompt": "your first variation here", "notes": "concise approach", "checklist_score": "4/6"}},
+  "B": {{"prompt": "your second variation here", "notes": "detailed approach", "checklist_score": "5/6"}},
+  "C": {{"prompt": "your third variation here", "notes": "structured approach", "checklist_score": "6/6"}}
+}}
+
+CRITICAL: Start your response with {{ and end with }}. No other text."""
+                
+                response = call_llm_v2(
+                    model=GROQ_EXPAND,
+                    prompt=current_prompt,
+                    max_tokens=GROQ_TOKEN_CAP,
+                    enforce_json=True
+                )
+                
+                if attempt == 1:
+                    self.tracker.record(response, "expander")
+                else:
+                    self.tracker.record(response, f"expander.retry{attempt}")
+                
+                raw = parse_json_response_v2(response["content"])
+                return _coerce_expansion(raw)
+                
+            except Exception as e:
+                last_error = str(e)[:200]
+                log_event("expander.retry", {"attempt": attempt, "error": last_error})
+                
+                if attempt == 3:
+                    # Ultimate fallback: generate basic variations
+                    return _generate_fallback_variations()
     
     def _run_ranker(
         self, 

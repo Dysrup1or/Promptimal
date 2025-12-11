@@ -260,21 +260,39 @@ def parse_json_response_v2(content: str) -> Dict[str, Any]:
     - Single quotes instead of double quotes
     - Trailing commas
     - Text before/after JSON object
+    - Escaped newlines and special characters
+    - Multiple JSON objects (takes first valid one)
     """
     import re
     
     # Strip whitespace
     content = content.strip()
     
-    # Remove markdown code blocks
-    if content.startswith("```"):
+    # Handle empty or None content
+    if not content:
+        raise ValueError("Empty response content")
+    
+    # Remove markdown code blocks (handle multiple formats)
+    if "```" in content:
         # Extract content between ``` markers
-        match = re.search(r'```(?:json)?\s*([\s\S]*?)```', content)
+        match = re.search(r'```(?:json|JSON)?\s*([\s\S]*?)```', content)
         if match:
             content = match.group(1).strip()
     
+    # Remove common prefixes that LLMs add
+    prefixes_to_remove = [
+        "Here is the JSON:",
+        "Here's the JSON:",
+        "JSON output:",
+        "Output:",
+        "Response:",
+    ]
+    for prefix in prefixes_to_remove:
+        if content.lower().startswith(prefix.lower()):
+            content = content[len(prefix):].strip()
+    
     # If content doesn't start with {, try to find JSON object in the text
-    if not content.startswith("{"):
+    if not content.startswith("{") and not content.startswith("["):
         # Look for JSON object anywhere in the response
         match = re.search(r'\{[\s\S]*\}', content)
         if match:
@@ -286,27 +304,57 @@ def parse_json_response_v2(content: str) -> Dict[str, Any]:
     except json.JSONDecodeError:
         pass
     
-    # Try fixing common issues
+    # Fix common JSON issues progressively
+    fixes = [
+        # Fix 1: Remove trailing commas
+        lambda c: re.sub(r',(\s*[}\]])', r'\1', c),
+        # Fix 2: Fix unescaped newlines in strings
+        lambda c: re.sub(r'(?<!\\)\n', r'\\n', c),
+        # Fix 3: Replace single quotes with double (for keys only)
+        lambda c: re.sub(r"'([^']+)'(\s*:)", r'"\1"\2', c),
+        # Fix 4: Add missing commas between key-value pairs
+        lambda c: re.sub(r'"\s*\n\s*"', '",\n"', c),
+        # Fix 5: Fix boolean values
+        lambda c: c.replace('True', 'true').replace('False', 'false').replace('None', 'null'),
+    ]
+    
+    current = content
+    for fix_fn in fixes:
+        try:
+            current = fix_fn(current)
+            return json.loads(current)
+        except (json.JSONDecodeError, Exception):
+            continue
+    
+    # Try all fixes together
     try:
-        # Replace single quotes with double quotes (naive approach)
-        fixed = content.replace("'", '"')
+        fixed = content
+        for fix_fn in fixes:
+            fixed = fix_fn(fixed)
         return json.loads(fixed)
     except json.JSONDecodeError:
         pass
     
-    # Try removing trailing commas
+    # Last resort: try to find any JSON object with greedy matching
     try:
-        fixed = re.sub(r',\s*}', '}', content)
-        fixed = re.sub(r',\s*]', ']', fixed)
-        return json.loads(fixed)
-    except json.JSONDecodeError:
-        pass
-    
-    # Last resort: try to find any JSON object
-    try:
-        match = re.search(r'\{[\s\S]*\}', content)
-        if match:
-            return json.loads(match.group())
+        # Find the outermost balanced braces
+        brace_count = 0
+        start_idx = None
+        end_idx = None
+        for i, char in enumerate(content):
+            if char == '{':
+                if start_idx is None:
+                    start_idx = i
+                brace_count += 1
+            elif char == '}':
+                brace_count -= 1
+                if brace_count == 0 and start_idx is not None:
+                    end_idx = i + 1
+                    break
+        
+        if start_idx is not None and end_idx is not None:
+            json_str = content[start_idx:end_idx]
+            return json.loads(json_str)
     except json.JSONDecodeError:
         pass
     
