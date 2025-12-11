@@ -8,6 +8,7 @@ from .database import init_database, get_db_connection
 from .models import User, Session, Usage
 from .auth_service import AuthService
 from .usage_service import UsageService
+from .stripe_service import StripeService, get_stripe_service
 from .logger import (
     logger,
     log_auth_event,
@@ -27,6 +28,9 @@ __all__ = [
     'Usage',
     'AuthService',
     'UsageService',
+    # Stripe
+    'StripeService',
+    'get_stripe_service',
     # Logging
     'logger',
     'log_auth_event',

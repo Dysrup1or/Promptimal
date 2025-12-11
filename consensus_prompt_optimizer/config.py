@@ -61,10 +61,10 @@ GROQ_TOKEN_CAP = 4000       # Output limit for Expander stage
 # ============================================================================
 # RATE LIMITING & COST CONTROLS (Production Safety)
 # ============================================================================
-# Free tier limits - adjust for paid tiers
-FREE_TIER_MONTHLY_LIMIT = 100   # Max requests per user per month
+# Free tier limits - reduced after Groq migration (cost efficiency)
+FREE_TIER_MONTHLY_LIMIT = 50    # Max requests per user per month (reduced from 100)
 COST_PER_REQUEST_AVG = 0.0012   # Average cost per optimization (~$0.0012)
-MAX_MONTHLY_COST_FREE_USER = FREE_TIER_MONTHLY_LIMIT * COST_PER_REQUEST_AVG  # ~$0.12
+MAX_MONTHLY_COST_FREE_USER = FREE_TIER_MONTHLY_LIMIT * COST_PER_REQUEST_AVG  # ~$0.06
 
 # Paid tier limits (for future implementation)
 PRO_TIER_MONTHLY_LIMIT = 500    # Pro users get 500/month

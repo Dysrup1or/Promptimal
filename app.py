@@ -22,8 +22,11 @@ load_dotenv()
 from consensus_prompt_optimizer.orchestrator import PromptimaV2
 from consensus_prompt_optimizer.config import FREE_TIER_MONTHLY_LIMIT, PRO_TIER_MONTHLY_LIMIT
 
-# Import authentication
-from auth import AuthService, UsageService
+# Import authentication and Stripe
+from auth import AuthService, UsageService, get_stripe_service
+
+# Get base URL for redirects
+APP_URL = os.getenv("APP_URL", "http://localhost:8501")
 
 
 # ============================================================================
@@ -402,6 +405,7 @@ st.markdown("""
 # ============================================================================
 auth_service = AuthService()
 usage_service = UsageService()
+stripe_service = get_stripe_service()
 
 
 # ============================================================================
@@ -572,7 +576,7 @@ def show_auth_page():
                         st.rerun()
             
             st.markdown("---")
-            st.markdown('<p style="color: #8b949e; font-size: 0.85rem; text-align: center;">· Free tier includes 100 optimizations/month</p>', unsafe_allow_html=True)
+            st.markdown('<p style="color: #8b949e; font-size: 0.85rem; text-align: center;">· Free tier includes 50 optimizations/month</p>', unsafe_allow_html=True)
     
     # Footer
     st.markdown("""
@@ -626,6 +630,26 @@ with st.sidebar:
             st.markdown(f"**0** requests remaining")
         else:
             st.markdown(f"**{remaining}** requests remaining")
+    
+    st.markdown("")
+    
+    # Upgrade/Manage Subscription button
+    if current_user.tier == "free":
+        if st.button("⚡ Upgrade to Pro", use_container_width=True, type="primary"):
+            st.session_state.show_upgrade = True
+            st.rerun()
+    elif current_user.is_pro and stripe_service.is_configured:
+        subscription = stripe_service.get_active_subscription(current_user.id)
+        if subscription:
+            if st.button("📋 Manage Subscription", use_container_width=True):
+                try:
+                    portal_url = stripe_service.create_customer_portal_session(
+                        user_id=current_user.id,
+                        return_url=APP_URL
+                    )
+                    st.markdown(f'<meta http-equiv="refresh" content="0; url={portal_url}">', unsafe_allow_html=True)
+                except Exception as e:
+                    st.error(f"Error: {e}")
     
     st.markdown("")
     
@@ -697,7 +721,9 @@ if run_button and idea:
         if not is_within_limit:
             st.error(f"Monthly usage limit reached ({current_count}/{limit} requests). Resets on the 1st of next month.")
             if current_user.tier == "free":
-                st.info("Upgrade to Pro for 500 requests/month")
+                if st.button("⚡ Upgrade to Pro for 500 requests/month"):
+                    st.session_state.show_upgrade = True
+                    st.rerun()
         else:
             with st.spinner("Optimizing your prompt... (this takes 10-30 seconds)"):
                 try:
@@ -865,7 +891,7 @@ if 'last_result' in st.session_state:
 
 
 # ============================================================================
-# UPGRADE MODAL (Placeholder for Stripe)
+# UPGRADE MODAL (Stripe Integration)
 # ============================================================================
 @st.dialog("Upgrade to Promptly Pro")
 def show_upgrade_dialog():
@@ -874,7 +900,7 @@ def show_upgrade_dialog():
     
     **Promptly Pro** gives you:
     
-    → **500 optimizations/month** (vs 100 free)  
+    → **500 optimizations/month** (vs 50 free)  
     → Priority processing  
     → Advanced analytics  
     → Email support  
@@ -885,19 +911,74 @@ def show_upgrade_dialog():
     
     """)
     
-    st.info("Coming Soon - Stripe integration is in development.")
-    
-    st.markdown("#### Join the Waitlist")
-    st.markdown("Be the first to know when Pro launches:")
-    
-    waitlist_email = st.text_input("Email", value=current_user.email, key="waitlist_email")
-    
-    if st.button("📬 Notify Me", use_container_width=True, type="primary"):
-        success, message = auth_service.add_to_waitlist(waitlist_email)
-        if success:
-            st.success(message)
+    # Check if Stripe is configured
+    if stripe_service.is_configured:
+        # Check if user already has an active subscription
+        subscription = stripe_service.get_active_subscription(current_user.id)
+        
+        if subscription and subscription.get("status") == "active":
+            st.success("✅ You already have an active Pro subscription!")
+            
+            # Show manage subscription button
+            if st.button("📋 Manage Subscription", use_container_width=True, type="primary"):
+                try:
+                    portal_url = stripe_service.create_customer_portal_session(
+                        user_id=current_user.id,
+                        return_url=APP_URL
+                    )
+                    st.markdown(f'<meta http-equiv="refresh" content="0; url={portal_url}">', unsafe_allow_html=True)
+                    st.info("Redirecting to billing portal...")
+                except Exception as e:
+                    st.error(f"Error: {e}")
         else:
-            st.error(message)
+            # Create checkout session button
+            if st.button("⚡ Subscribe Now", use_container_width=True, type="primary"):
+                try:
+                    checkout_url = stripe_service.create_checkout_session(
+                        user_id=current_user.id,
+                        email=current_user.email,
+                        name=current_user.full_name,
+                        success_url=f"{APP_URL}?upgrade=success",
+                        cancel_url=f"{APP_URL}?upgrade=canceled"
+                    )
+                    # Redirect to Stripe Checkout
+                    st.markdown(f'<meta http-equiv="refresh" content="0; url={checkout_url}">', unsafe_allow_html=True)
+                    st.info("Redirecting to secure checkout...")
+                except Exception as e:
+                    st.error(f"Checkout error: {e}")
+            
+            st.markdown("---")
+            st.markdown('<p style="color: #718096; font-size: 0.8rem; text-align: center;">🔒 Secure payment via Stripe</p>', unsafe_allow_html=True)
+    else:
+        # Stripe not configured - show waitlist
+        st.info("Stripe integration is being configured. Join the waitlist!")
+        
+        st.markdown("#### Join the Waitlist")
+        st.markdown("Be the first to know when Pro launches:")
+        
+        waitlist_email = st.text_input("Email", value=current_user.email, key="waitlist_email")
+        
+        if st.button("📬 Notify Me", use_container_width=True, type="primary"):
+            success, message = auth_service.add_to_waitlist(waitlist_email)
+            if success:
+                st.success(message)
+            else:
+                st.error(message)
+
+# Handle upgrade success/cancel from URL params
+query_params = st.query_params
+if query_params.get("upgrade") == "success":
+    st.success("🎉 Welcome to Promptly Pro! Your account has been upgraded.")
+    # Refresh user from database to get updated tier
+    updated_user = auth_service.get_user_by_id(current_user.id)
+    if updated_user:
+        st.session_state.current_user = updated_user
+        current_user = updated_user
+    st.query_params.clear()
+    st.rerun()
+elif query_params.get("upgrade") == "canceled":
+    st.info("Upgrade canceled. You can upgrade anytime from the sidebar.")
+    st.query_params.clear()
 
 # Show upgrade dialog if triggered
 if st.session_state.get('show_upgrade', False):

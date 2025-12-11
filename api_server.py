@@ -11,9 +11,9 @@ from typing import AsyncGenerator, Optional, Callable
 from datetime import datetime
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, Query, HTTPException, Request, Header
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel
 
 from dotenv import load_dotenv
@@ -21,7 +21,7 @@ load_dotenv()
 
 from consensus_prompt_optimizer.orchestrator import PromptimaV2
 from consensus_prompt_optimizer.config import FREE_TIER_MONTHLY_LIMIT, PRO_TIER_MONTHLY_LIMIT
-from auth import AuthService, UsageService
+from auth import AuthService, UsageService, get_stripe_service
 
 # ============================================================================
 # APP SETUP
@@ -53,6 +53,7 @@ app.add_middleware(
 # Services
 auth_service = AuthService()
 usage_service = UsageService()
+stripe_service = get_stripe_service()
 
 
 # ============================================================================
@@ -247,6 +248,124 @@ async def optimize(request: OptimizeRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# STRIPE ENDPOINTS
+# ============================================================================
+
+@app.post("/api/stripe/webhook")
+async def stripe_webhook(
+    request: Request,
+    stripe_signature: str = Header(None, alias="Stripe-Signature")
+):
+    """
+    Stripe webhook endpoint for subscription events.
+    
+    Configure this in Stripe Dashboard:
+    - URL: https://your-domain/api/stripe/webhook
+    - Events: checkout.session.completed, customer.subscription.*
+    """
+    if not stripe_signature:
+        raise HTTPException(status_code=400, detail="Missing Stripe-Signature header")
+    
+    # Get raw body
+    payload = await request.body()
+    
+    try:
+        # Verify and construct event
+        event = stripe_service.construct_webhook_event(payload, stripe_signature)
+        
+        # Handle the event
+        success, message = stripe_service.handle_webhook_event(event)
+        
+        if success:
+            return {"status": "success", "message": message}
+        else:
+            # Log error but return 200 to prevent Stripe retries for business logic errors
+            print(f"Webhook handling failed: {message}")
+            return {"status": "error", "message": message}
+            
+    except ValueError as e:
+        # Invalid signature
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        print(f"Webhook error: {e}")
+        raise HTTPException(status_code=500, detail="Webhook processing failed")
+
+
+class CheckoutRequest(BaseModel):
+    user_id: int
+    email: str
+    name: str = ""
+    success_url: str
+    cancel_url: str
+
+
+@app.post("/api/stripe/create-checkout-session")
+async def create_checkout_session(request: CheckoutRequest):
+    """
+    Create a Stripe Checkout session for subscription upgrade.
+    Returns the checkout URL to redirect the user to.
+    """
+    if not stripe_service.is_configured:
+        raise HTTPException(
+            status_code=503, 
+            detail="Stripe is not configured. Set STRIPE_SECRET_KEY and STRIPE_PRO_PRICE_ID."
+        )
+    
+    try:
+        checkout_url = stripe_service.create_checkout_session(
+            user_id=request.user_id,
+            email=request.email,
+            name=request.name,
+            success_url=request.success_url,
+            cancel_url=request.cancel_url
+        )
+        return {"checkout_url": checkout_url}
+    except Exception as e:
+        print(f"Checkout session error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class PortalRequest(BaseModel):
+    user_id: int
+    return_url: str
+
+
+@app.post("/api/stripe/create-portal-session")
+async def create_portal_session(request: PortalRequest):
+    """
+    Create a Stripe Customer Portal session for subscription management.
+    Returns the portal URL to redirect the user to.
+    """
+    if not stripe_service.is_configured:
+        raise HTTPException(
+            status_code=503, 
+            detail="Stripe is not configured."
+        )
+    
+    try:
+        portal_url = stripe_service.create_customer_portal_session(
+            user_id=request.user_id,
+            return_url=request.return_url
+        )
+        return {"portal_url": portal_url}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        print(f"Portal session error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/stripe/subscription-status/{user_id}")
+async def get_subscription_status(user_id: int):
+    """Get the current subscription status for a user."""
+    subscription = stripe_service.get_active_subscription(user_id)
+    return {
+        "has_subscription": subscription is not None,
+        "subscription": subscription
+    }
 
 
 # ============================================================================

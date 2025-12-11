@@ -33,5 +33,8 @@ psycopg2-binary>=2.9.0
 # Logging
 loguru>=0.7.0
 
+# Payments (Stripe)
+stripe>=7.0.0
+
 # Development/Testing (optional - can be removed for production)
 pytest>=7.4.0

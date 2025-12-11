@@ -148,12 +148,44 @@ def _init_sqlite() -> None:
         )
     """)
     
+    # Stripe customers table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS stripe_customers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER UNIQUE NOT NULL,
+            stripe_customer_id TEXT UNIQUE NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+    
+    # Stripe subscriptions table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS subscriptions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            stripe_subscription_id TEXT UNIQUE NOT NULL,
+            status TEXT NOT NULL DEFAULT 'incomplete',
+            plan TEXT NOT NULL DEFAULT 'pro',
+            current_period_start TIMESTAMP,
+            current_period_end TIMESTAMP,
+            cancel_at_period_end INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+    
     # Create indexes
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(session_token)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_usage_user_month ON usage(user_id, month, year)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_password_reset_token ON password_reset_tokens(token)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_email_verification_token ON email_verification_tokens(token)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_stripe_customers_user ON stripe_customers(user_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_stripe_customers_stripe ON stripe_customers(stripe_customer_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe ON subscriptions(stripe_subscription_id)")
     
     conn.commit()
     conn.close()
@@ -250,12 +282,42 @@ def _init_postgres() -> None:
             )
         """)
         
+        # Stripe customers table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS stripe_customers (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER UNIQUE NOT NULL REFERENCES users(id),
+                stripe_customer_id TEXT UNIQUE NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        # Stripe subscriptions table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS subscriptions (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id),
+                stripe_subscription_id TEXT UNIQUE NOT NULL,
+                status TEXT NOT NULL DEFAULT 'incomplete',
+                plan TEXT NOT NULL DEFAULT 'pro',
+                current_period_start TIMESTAMP,
+                current_period_end TIMESTAMP,
+                cancel_at_period_end BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
         # Create indexes
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(session_token)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_usage_user_month ON usage(user_id, month, year)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_password_reset_token ON password_reset_tokens(token)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_email_verification_token ON email_verification_tokens(token)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_stripe_customers_user ON stripe_customers(user_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_stripe_customers_stripe ON stripe_customers(stripe_customer_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe ON subscriptions(stripe_subscription_id)")
         
         conn.commit()
     finally:
@@ -359,6 +421,8 @@ def reset_database() -> None:
         conn = _get_pg_connection()
         cursor = conn.cursor()
         try:
+            cursor.execute("DROP TABLE IF EXISTS subscriptions CASCADE")
+            cursor.execute("DROP TABLE IF EXISTS stripe_customers CASCADE")
             cursor.execute("DROP TABLE IF EXISTS email_verification_tokens CASCADE")
             cursor.execute("DROP TABLE IF EXISTS password_reset_tokens CASCADE")
             cursor.execute("DROP TABLE IF EXISTS waitlist CASCADE")
