@@ -657,9 +657,14 @@ with st.sidebar:
     
     # Upgrade/Manage Subscription button
     if current_user.tier == "free":
-        if st.button("⚡ Upgrade to Pro", use_container_width=True, type="primary"):
-            st.session_state.show_upgrade = True
-            st.rerun()
+        if stripe_service.is_configured:
+            if st.button("⚡ Upgrade to Pro", use_container_width=True, type="primary"):
+                st.session_state.show_upgrade = True
+                st.rerun()
+        else:
+            if st.button("🚀 Pro - Coming Soon", use_container_width=True):
+                st.session_state.show_upgrade = True
+                st.rerun()
     elif current_user.is_pro and stripe_service.is_configured:
         subscription = stripe_service.get_active_subscription(current_user.id)
         if subscription:
@@ -743,7 +748,8 @@ if run_button and idea:
         if not is_within_limit:
             st.error(f"Monthly usage limit reached ({current_count}/{limit} requests). Resets on the 1st of next month.")
             if current_user.tier == "free":
-                if st.button("⚡ Upgrade to Pro for 500 requests/month"):
+                btn_text = "⚡ Upgrade to Pro for 500 requests/month" if stripe_service.is_configured else "🚀 Pro Coming Soon - Join Waitlist"
+                if st.button(btn_text):
                     st.session_state.show_upgrade = True
                     st.rerun()
         else:
@@ -915,26 +921,25 @@ if 'last_result' in st.session_state:
 # ============================================================================
 # UPGRADE MODAL (Stripe Integration)
 # ============================================================================
-@st.dialog("Upgrade to Catalyze Pro")
+@st.dialog("Catalyze Pro" if stripe_service.is_configured else "Catalyze Pro - Coming Soon")
 def show_upgrade_dialog():
-    st.markdown("""
-    ### Unlock More Power
-    
-    **Catalyze Pro** gives you:
-    
-    → **500 optimizations/month** (vs 50 free)  
-    → Priority processing  
-    → Advanced analytics  
-    → Email support  
-    
-    ---
-    
-    ### $9.99/month
-    
-    """)
-    
-    # Check if Stripe is configured
     if stripe_service.is_configured:
+        st.markdown("""
+        ### Unlock More Power
+        
+        **Catalyze Pro** gives you:
+        
+        → **500 optimizations/month** (vs 50 free)  
+        → Priority processing  
+        → Advanced analytics  
+        → Email support  
+        
+        ---
+        
+        ### $9.99/month
+        
+        """)
+        
         # Check if user already has an active subscription
         subscription = stripe_service.get_active_subscription(current_user.id)
         
@@ -972,18 +977,34 @@ def show_upgrade_dialog():
             st.markdown("---")
             st.markdown('<p style="color: #718096; font-size: 0.8rem; text-align: center;">🔒 Secure payment via Stripe</p>', unsafe_allow_html=True)
     else:
-        # Stripe not configured - show waitlist
-        st.info("Stripe integration is being configured. Join the waitlist!")
+        # Stripe not configured - show Coming Soon with waitlist
+        st.markdown("""
+        ### 🚀 Pro Tier Launching Soon!
         
-        st.markdown("#### Join the Waitlist")
-        st.markdown("Be the first to know when Pro launches:")
+        **Catalyze Pro** will include:
+        
+        → **500 transformations/month** (vs 50 free)  
+        → Priority processing  
+        → Advanced analytics  
+        → Email support  
+        
+        ---
+        
+        ### $9.99/month
+        
+        We're putting the finishing touches on our payment system.
+        Join the waitlist to be notified when Pro launches!
+        """)
+        
+        st.markdown("#### 📧 Get Notified")
         
         waitlist_email = st.text_input("Email", value=current_user.email, key="waitlist_email")
         
-        if st.button("📬 Notify Me", use_container_width=True, type="primary"):
+        if st.button("🔔 Join Waitlist", use_container_width=True, type="primary"):
             success, message = auth_service.add_to_waitlist(waitlist_email)
             if success:
-                st.success(message)
+                st.success("🎉 " + message)
+                st.balloons()
             else:
                 st.error(message)
 
