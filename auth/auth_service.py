@@ -318,6 +318,11 @@ class AuthService:
             log_auth_event("login", email=email, user_id=user.id, success=False, reason="invalid_password")
             return None, None, "Invalid email or password."
         
+        # Check email verification (admin users bypass this check)
+        if not user.email_verified and user.tier != "admin":
+            log_auth_event("login", email=email, user_id=user.id, success=False, reason="email_not_verified")
+            return None, None, "Please verify your email before logging in. Check your inbox for the verification link."
+        
         # Create session
         token = self.create_session(user.id)
         

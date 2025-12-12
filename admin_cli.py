@@ -144,7 +144,7 @@ def change_tier(args):
     setup_database()
     auth = AuthService()
     
-    valid_tiers = ['free', 'pro', 'enterprise']
+    valid_tiers = ['free', 'pro', 'enterprise', 'admin']
     if args.tier not in valid_tiers:
         print(f"Invalid tier: {args.tier}")
         print(f"Valid tiers: {', '.join(valid_tiers)}")
@@ -165,8 +165,16 @@ def change_tier(args):
         """, (args.tier, user.id))
         conn.commit()
     
+    tier_info = {
+        'free': '40 CCs/month',
+        'pro': '300 CCs/month', 
+        'enterprise': 'Unlimited',
+        'admin': 'Unlimited (Admin)'
+    }
+    
     logger.info(f"ADMIN | Changed tier for {args.email}: {old_tier} -> {args.tier}")
     print(f"✓ Changed tier for {args.email}: {old_tier.upper()} -> {args.tier.upper()}")
+    print(f"  New limit: {tier_info.get(args.tier, 'Unknown')}")
 
 
 def verify_user(args):
@@ -319,6 +327,65 @@ def reset_password(args):
         print(f"Failed: {message}")
 
 
+def create_admin(args):
+    """Create a new admin user with unlimited access."""
+    setup_database()
+    auth = AuthService()
+    
+    # Check if user already exists
+    existing = auth.get_user_by_email(args.email)
+    if existing:
+        print(f"User already exists: {args.email}")
+        print(f"Current tier: {existing.tier}")
+        
+        # Offer to upgrade to admin
+        if existing.tier != "admin":
+            confirm = input(f"Upgrade {args.email} to ADMIN tier? (y/N): ").strip().lower()
+            if confirm == 'y':
+                with get_db_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        UPDATE users SET tier = 'admin', email_verified = 1, updated_at = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    """, (existing.id,))
+                    conn.commit()
+                logger.info(f"ADMIN | Upgraded {args.email} to admin tier")
+                print(f"✓ User {args.email} upgraded to ADMIN")
+        return
+    
+    # Create new admin user
+    user, token, error = auth.register(
+        email=args.email,
+        first_name=args.first_name,
+        last_name=args.last_name,
+        password=args.password,
+        confirm_password=args.password
+    )
+    
+    if error:
+        print(f"Failed to create user: {error}")
+        return
+    
+    # Upgrade to admin tier and auto-verify
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE users SET tier = 'admin', email_verified = 1, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        """, (user.id,))
+        conn.commit()
+    
+    logger.info(f"ADMIN | Created admin user: {args.email}")
+    print(f"\n{'='*50}")
+    print(f"✓ Admin Account Created Successfully!")
+    print(f"{'='*50}")
+    print(f"Email:     {args.email}")
+    print(f"Name:      {args.first_name} {args.last_name}")
+    print(f"Tier:      ADMIN (Unlimited)")
+    print(f"Verified:  Yes ✓")
+    print(f"{'='*50}\n")
+
+
 def main():
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -341,7 +408,7 @@ def main():
     # change-tier
     change_tier_parser = subparsers.add_parser("change-tier", help="Change user tier")
     change_tier_parser.add_argument("email", help="User email address")
-    change_tier_parser.add_argument("tier", choices=["free", "pro", "enterprise"], help="New tier")
+    change_tier_parser.add_argument("tier", choices=["free", "pro", "enterprise", "admin"], help="New tier")
     
     # verify-user
     verify_parser = subparsers.add_parser("verify-user", help="Manually verify user email")
@@ -361,6 +428,13 @@ def main():
     reset_parser = subparsers.add_parser("reset-password", help="Generate password reset")
     reset_parser.add_argument("email", help="User email address")
     
+    # create-admin
+    admin_parser = subparsers.add_parser("create-admin", help="Create admin user with unlimited access")
+    admin_parser.add_argument("email", help="Admin email address")
+    admin_parser.add_argument("--first-name", "-f", default="Admin", help="First name (default: Admin)")
+    admin_parser.add_argument("--last-name", "-l", default="User", help="Last name (default: User)")
+    admin_parser.add_argument("--password", "-p", required=True, help="Password for the admin account")
+    
     args = parser.parse_args()
     
     if not args.command:
@@ -376,6 +450,7 @@ def main():
         "delete-user": delete_user,
         "usage-stats": usage_stats,
         "reset-password": reset_password,
+        "create-admin": create_admin,
     }
     
     handler = commands.get(args.command)

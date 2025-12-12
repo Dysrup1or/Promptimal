@@ -72,6 +72,9 @@ PRO_TIER_MONTHLY_LIMIT = 300       # Alias for backward compatibility
 # Enterprise tier - unlimited
 ENTERPRISE_TIER_LIMIT = None       # Unlimited for enterprise
 
+# Admin tier - unlimited (internal use)
+ADMIN_TIER_LIMIT = None            # Unlimited for admin accounts
+
 # Cost metrics
 COST_PER_REQUEST_AVG = 0.01375     # Average COGS per CC (~$0.01375)
 OVERAGE_PRICE_PER_CC = 0.08        # Pay-as-you-go overage rate ($0.08/CC)

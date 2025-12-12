@@ -22,19 +22,21 @@ from consensus_prompt_optimizer.config import (
     ENTERPRISE_TIER_LIMIT,
     FLOW_TIER_MONTHLY_LIMIT,
     SYNAPSE_TIER_MONTHLY_LIMIT,
+    ADMIN_TIER_LIMIT,
 )
 
 
 class UsageService:
     """Service for Catalyze Credit (CC) usage tracking."""
     
-    # Tier limits mapping (Flow=40, Synapse=300, Enterprise=unlimited)
+    # Tier limits mapping (Flow=40, Synapse=300, Enterprise=unlimited, Admin=unlimited)
     TIER_LIMITS = {
         "free": FLOW_TIER_MONTHLY_LIMIT,       # 40 CCs (Flow tier)
         "flow": FLOW_TIER_MONTHLY_LIMIT,       # Alias
         "pro": SYNAPSE_TIER_MONTHLY_LIMIT,     # 300 CCs (Synapse tier)
         "synapse": SYNAPSE_TIER_MONTHLY_LIMIT, # Alias
         "enterprise": ENTERPRISE_TIER_LIMIT,   # None (unlimited)
+        "admin": ADMIN_TIER_LIMIT,             # None (unlimited - internal use)
     }
     
     def __init__(self):

@@ -16,7 +16,7 @@ class User:
     first_name: str
     last_name: str
     password_hash: str
-    tier: str = "free"  # 'free', 'pro', 'enterprise'
+    tier: str = "free"  # 'free', 'pro', 'enterprise', 'admin'
     email_verified: bool = False
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -28,13 +28,18 @@ class User:
     
     @property
     def is_pro(self) -> bool:
-        """Check if user has pro tier."""
-        return self.tier in ("pro", "enterprise")
+        """Check if user has pro tier or above."""
+        return self.tier in ("pro", "enterprise", "admin")
     
     @property
     def is_enterprise(self) -> bool:
         """Check if user has enterprise tier."""
         return self.tier == "enterprise"
+    
+    @property
+    def is_admin(self) -> bool:
+        """Check if user has admin tier (unlimited access)."""
+        return self.tier == "admin"
     
     @classmethod
     def from_row(cls, row) -> "User":
