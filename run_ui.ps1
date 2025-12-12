@@ -25,8 +25,10 @@ if ($LASTEXITCODE -ne 0) {
 if (-not (Test-Path ".env")) {
     Write-Host "[WARNING] .env file not found!" -ForegroundColor Yellow
     Write-Host "Please create a .env file with your API keys:" -ForegroundColor Yellow
-    Write-Host "  GEMINI_API_KEY=your-key-here" -ForegroundColor Gray
-    Write-Host "  DEEPSEEK_API_KEY=your-key-here" -ForegroundColor Gray
+    Write-Host "  GROQ_API_KEY=your-key-here   # Primary for normal runs" -ForegroundColor Gray
+    Write-Host "  DEEPSEEK_API_KEY=your-key-here # Fallback (optional but recommended)" -ForegroundColor Gray
+    Write-Host "  GEMINI_API_KEY=your-key-here  # Required only for image upload" -ForegroundColor Gray
+    Write-Host "  OPENAI_API_KEY=your-key-here  # Required only for voice transcription" -ForegroundColor Gray
     Write-Host ""
     Write-Host "You can enter keys in the UI sidebar as well." -ForegroundColor Gray
     Write-Host ""

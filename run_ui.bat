@@ -26,8 +26,10 @@ REM Check if .env exists
 if not exist ".env" (
     echo [WARNING] .env file not found!
     echo Please create a .env file with your API keys:
-    echo   GEMINI_API_KEY=your-key-here
-    echo   DEEPSEEK_API_KEY=your-key-here
+    echo   GROQ_API_KEY=your-key-here        ^(Primary for normal runs^)
+    echo   DEEPSEEK_API_KEY=your-key-here    ^(Fallback - optional but recommended^)
+    echo   GEMINI_API_KEY=your-key-here      ^(Required only for image upload^)
+    echo   OPENAI_API_KEY=your-key-here      ^(Required only for voice transcription^)
     echo.
     echo You can enter keys in the UI sidebar as well.
     echo.
