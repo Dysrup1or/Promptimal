@@ -225,12 +225,17 @@ def _extract_section(text: str, section_name: str) -> str:
         
         return ' '.join(section_lines)
     except:
-        return ""
-
-
-# =============================================================================
-# INPUT COMBINER (Task 2.3)
-# =============================================================================
+        # Backwards/forwards compatible keys:
+        # - app.py currently reads `voice`/`image`
+        # - other callers may read `voice_available`/`image_available`
+        return {
+            "voice": voice_available,
+            "image": image_available,
+            "voice_available": voice_available,
+            "image_available": image_available,
+            "voice_reason": voice_reason,
+            "image_reason": image_reason,
+        }
 
 async def combine_multimodal_inputs(
     text_input: str = "",

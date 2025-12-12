@@ -22,7 +22,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 
 # v2 imports
-from .config import GEMINI_FAST, GROQ_EXPAND, GROQ_TOKEN_CAP
+from .config import FALLBACK_TEXT_MODEL, PRIMARY_TEXT_MODEL, GROQ_EXPAND, GROQ_TOKEN_CAP
 from .schemas import (
     DiscernOutput,
     RubricOutput,
@@ -370,10 +370,11 @@ class PromptimaV2:
             )
         
         response = call_llm_v2(
-            model=GEMINI_FAST,
+            model=PRIMARY_TEXT_MODEL,
             prompt=prompt,
             max_tokens=500,  # Increased for detailed analysis
-            enforce_json=True
+            enforce_json=True,
+            fallback_models=[FALLBACK_TEXT_MODEL]
         )
         self.tracker.record(response, "discerner")
         
@@ -397,10 +398,11 @@ class PromptimaV2:
             )
         
         response = call_llm_v2(
-            model=GEMINI_FAST,
+            model=PRIMARY_TEXT_MODEL,
             prompt=prompt,
             max_tokens=1200,  # Generous for detailed rubrics
-            enforce_json=True
+            enforce_json=True,
+            fallback_models=[FALLBACK_TEXT_MODEL]
         )
         self.tracker.record(response, "critic_first")
         
@@ -541,7 +543,8 @@ CRITICAL: Start your response with {{ and end with }}. No other text."""
                     model=GROQ_EXPAND,
                     prompt=current_prompt,
                     max_tokens=GROQ_TOKEN_CAP,
-                    enforce_json=True
+                    enforce_json=True,
+                    fallback_models=[FALLBACK_TEXT_MODEL]
                 )
                 
                 if attempt == 1:
@@ -592,10 +595,11 @@ CRITICAL: Start your response with {{ and end with }}. No other text."""
             )
         
         response = call_llm_v2(
-            model=GEMINI_FAST,
+            model=PRIMARY_TEXT_MODEL,
             prompt=prompt,
             max_tokens=150,
-            enforce_json=True
+            enforce_json=True,
+            fallback_models=[FALLBACK_TEXT_MODEL]
         )
         self.tracker.record(response, "ranker")
         
@@ -640,10 +644,11 @@ CRITICAL: Start your response with {{ and end with }}. No other text."""
             )
         
         response = call_llm_v2(
-            model=GEMINI_FAST,
+            model=PRIMARY_TEXT_MODEL,
             prompt=prompt,
             max_tokens=2000,  # Generous for complex final prompts
-            enforce_json=True
+            enforce_json=True,
+            fallback_models=[FALLBACK_TEXT_MODEL]
         )
         self.tracker.record(response, "synthesizer")
         
@@ -841,10 +846,11 @@ CRITICAL RULES:
 4. confidence must be a decimal between 0.7 and 1.0"""
                     
                     retry_response = call_llm_v2(
-                        model=GEMINI_FAST,
+                        model=PRIMARY_TEXT_MODEL,
                         prompt=retry_prompt,
                         max_tokens=2000,
-                        enforce_json=True
+                        enforce_json=True,
+                        fallback_models=[FALLBACK_TEXT_MODEL]
                     )
                     self.tracker.record(retry_response, f"synthesizer.retry{attempt}")
                     retry_raw = parse_json_response_v2(retry_response["content"])

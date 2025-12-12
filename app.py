@@ -1271,11 +1271,31 @@ def run_async(coro):
     return loop.run_until_complete(coro)
 
 if run_button and (idea or st.session_state.get('audio_input') or st.session_state.get('image_input')):
-    if not os.getenv("GEMINI_API_KEY") or not os.getenv("DEEPSEEK_API_KEY"):
-        st.error("Please configure API keys in environment variables")
+    has_audio_input = bool(st.session_state.get('audio_input'))
+    has_image_input = bool(st.session_state.get('image_input'))
+
+    groq_key = os.getenv("GROQ_API_KEY", "").strip()
+    deepseek_key = os.getenv("DEEPSEEK_API_KEY", "").strip()
+    gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
+    openai_key = os.getenv("OPENAI_API_KEY", "").strip()
+
+    missing: list[str] = []
+
+    # Normal runs: Groq first, DeepSeek fallback.
+    if not groq_key and not deepseek_key:
+        missing.append("GROQ_API_KEY (preferred) or DEEPSEEK_API_KEY (fallback)")
+
+    # Multimodal-only requirements
+    if has_image_input and not gemini_key:
+        missing.append("GEMINI_API_KEY (required for image analysis)")
+    if has_audio_input and not openai_key:
+        missing.append("OPENAI_API_KEY (required for voice transcription)")
+
+    if missing:
+        st.error("Missing API keys: " + ", ".join(missing))
     else:
         # Determine credit cost based on multimodal inputs
-        has_multimodal_inputs = st.session_state.get('audio_input') or st.session_state.get('image_input')
+        has_multimodal_inputs = has_audio_input or has_image_input
         credit_cost = MULTIMODAL_CREDIT_COST if has_multimodal_inputs else 1
         
         # Check rate limit from database (with credit cost)

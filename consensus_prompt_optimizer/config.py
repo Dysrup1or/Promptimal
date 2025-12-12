@@ -84,7 +84,15 @@ OVERAGE_PRICE_PER_CC = 0.08        # Pay-as-you-go overage rate ($0.08/CC)
 # ============================================================================
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")  # Primary for Expander
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")  # Fallback provider
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")  # LiteLLM may need this set
+
+# ============================================================================
+# MODEL ROUTING (Text-only pipeline)
+# ============================================================================
+# Requirement: normal runs use Groq first, DeepSeek as fallback.
+PRIMARY_TEXT_MODEL = os.getenv("PRIMARY_TEXT_MODEL", GROQ_EXPAND)
+FALLBACK_TEXT_MODEL = os.getenv("FALLBACK_TEXT_MODEL", "deepseek/deepseek-chat")
 
 # ============================================================================
 # TELEMETRY (Optional)

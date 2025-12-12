@@ -173,7 +173,8 @@ def call_llm_v2(
     max_tokens: int = 500,
     temperature: float = 0.0,
     enforce_json: bool = False,
-    compress: bool = True
+    compress: bool = True,
+    fallback_models: Optional[list[str]] = None
 ) -> Dict[str, Any]:
     """
     Enhanced LLM call with v2 features.
@@ -209,45 +210,57 @@ def call_llm_v2(
     if enforce_json:
         messages[0]["content"] += "\n\n[IMPORTANT: Your response MUST be valid JSON only. No text before or after the JSON object. Start with { and end with }]"
     
-    # Build API call kwargs
-    api_kwargs = {
+    models_to_try = [model] + (fallback_models or [])
+
+    last_error: Optional[Exception] = None
+    for current_model in models_to_try:
+        # Enforce token caps for Groq models
+        effective_max_tokens = max_tokens
+        if current_model.startswith("groq/") and effective_max_tokens > GROQ_TOKEN_CAP:
+            effective_max_tokens = GROQ_TOKEN_CAP
+
+        # Build API call kwargs
+        api_kwargs = {
+            "model": current_model,
+            "messages": messages,
+            "max_tokens": effective_max_tokens,
+            "temperature": temperature,
+        }
+
+        # JSON response_format is not uniformly supported across providers.
+        # Keep the explicit JSON-only instruction in the prompt for all models,
+        # but only set response_format where we expect support.
+        if enforce_json and current_model.startswith("gemini/"):
+            api_kwargs["response_format"] = {"type": "json_object"}
+
+        try:
+            response = litellm.completion(**api_kwargs)
+
+            content = response.choices[0].message.content
+            output_tokens = count_tokens(content, current_model)
+            cost = calculate_cost(input_tokens, output_tokens, current_model)
+
+            return {
+                "content": content,
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "cost": cost,
+                "model": current_model,
+                "success": True,
+            }
+        except Exception as e:
+            last_error = e
+            continue
+
+    return {
+        "content": "",
+        "input_tokens": input_tokens,
+        "output_tokens": 0,
+        "cost": 0.0,
         "model": model,
-        "messages": messages,
-        "max_tokens": max_tokens,
-        "temperature": temperature
+        "success": False,
+        "error": str(last_error) if last_error else "Unknown error",
     }
-    
-    # Add response_format for JSON mode (supported by Gemini and newer models)
-    if enforce_json:
-        api_kwargs["response_format"] = {"type": "json_object"}
-    
-    # Make API call
-    try:
-        response = litellm.completion(**api_kwargs)
-        
-        content = response.choices[0].message.content
-        output_tokens = count_tokens(content, model)
-        cost = calculate_cost(input_tokens, output_tokens, model)
-        
-        return {
-            "content": content,
-            "input_tokens": input_tokens,
-            "output_tokens": output_tokens,
-            "cost": cost,
-            "model": model,
-            "success": True
-        }
-        
-    except Exception as e:
-        return {
-            "content": "",
-            "input_tokens": input_tokens,
-            "output_tokens": 0,
-            "cost": 0.0,
-            "model": model,
-            "success": False,
-            "error": str(e)
-        }
 
 
 def parse_json_response_v2(content: str) -> Dict[str, Any]:
