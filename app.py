@@ -738,41 +738,47 @@ def show_auth_page():
     left_col, right_col = st.columns([1.2, 0.8], gap="small")
     
     with left_col:
-        # Use st.html() for text content, st.image() for the image
-        st.html('''
-        <div class="landing-left-col">
-            <h1 class="landing-logo">CATALYZE</h1>
-            <p class="landing-tagline">Transform your ideas into bulletproof prompts</p>
-        </div>
-        ''')
+        # Background container with gradient
+        st.markdown('''
+        <style>
+            [data-testid="stVerticalBlock"]:has(.landing-content) {
+                background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+                padding: 40px 30px;
+                border-radius: 0 24px 24px 0;
+                min-height: 85vh;
+            }
+        </style>
+        ''', unsafe_allow_html=True)
         
-        # Hero image using native Streamlit (works with local files)
-        try:
-            st.image("assets/hero_robots.png", use_container_width=True)
-        except:
-            pass  # Silently fail if image not found
+        # Logo and tagline using markdown (simpler, more reliable)
+        st.markdown('<div class="landing-content"></div>', unsafe_allow_html=True)
+        st.markdown('<h1 style="font-size: 2.5rem; font-weight: 800; color: #00F0FF; text-shadow: 0 0 60px rgba(0, 240, 255, 0.5); font-family: Inter, sans-serif; letter-spacing: 0.25em; text-align: center; margin-bottom: 8px;">CATALYZE</h1>', unsafe_allow_html=True)
+        st.markdown('<p style="color: #94a3b8; font-size: 1rem; font-family: Inter, sans-serif; letter-spacing: 0.02em; text-align: center; margin-bottom: 24px;">Transform your ideas into bulletproof prompts</p>', unsafe_allow_html=True)
+        
+        # Hero image
+        st.image("assets/hero_robots.png", use_container_width=True)
         
         # Features list
-        st.html('''
-        <div class="landing-features">
-            <div class="landing-feature">
-                <span style="color: #00F0FF;">&#9670;</span>
+        st.markdown('''
+        <div style="max-width: 380px; margin: 24px auto 0 auto;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px; color: #64748b; font-size: 0.9rem;">
+                <span style="color: #00F0FF;">◆</span>
                 <span>5-stage AI pipeline with Judge-then-Generate</span>
             </div>
-            <div class="landing-feature">
-                <span style="color: #a855f7;">&#9670;</span>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px; color: #64748b; font-size: 0.9rem;">
+                <span style="color: #a855f7;">◆</span>
                 <span>Success Spec ensures intent preservation</span>
             </div>
-            <div class="landing-feature">
-                <span style="color: #00F0FF;">&#9670;</span>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px; color: #64748b; font-size: 0.9rem;">
+                <span style="color: #00F0FF;">◆</span>
                 <span>~$0.02 per optimization with full transparency</span>
             </div>
-            <div class="landing-feature">
-                <span style="color: #a855f7;">&#9670;</span>
+            <div style="display: flex; align-items: center; gap: 12px; color: #64748b; font-size: 0.9rem;">
+                <span style="color: #a855f7;">◆</span>
                 <span>40 free credits monthly on Flow tier</span>
             </div>
         </div>
-        ''')
+        ''', unsafe_allow_html=True)
     
     with right_col:
         # Auth form section
