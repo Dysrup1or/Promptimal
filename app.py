@@ -734,10 +734,10 @@ def show_auth_page():
     left_col, right_col = st.columns([1.2, 0.8], gap="small")
     
     with left_col:
-        # All visual content in ONE markdown block to ensure proper rendering
+        # Use st.html() for proper HTML rendering (not st.markdown)
         hero_url = "https://raw.githubusercontent.com/Dysrup1or/Promptimal/main/assets/hero_robots.png"
         
-        st.markdown(f'''
+        st.html(f'''
         <div class="landing-left-col">
             <h1 class="landing-logo">CATALYZE</h1>
             <p class="landing-tagline">Transform your ideas into bulletproof prompts</p>
@@ -746,24 +746,24 @@ def show_auth_page():
             
             <div class="landing-features">
                 <div class="landing-feature">
-                    <span style="color: #00F0FF;">◆</span>
+                    <span style="color: #00F0FF;">&#9670;</span>
                     <span>5-stage AI pipeline with Judge-then-Generate</span>
                 </div>
                 <div class="landing-feature">
-                    <span style="color: #a855f7;">◆</span>
+                    <span style="color: #a855f7;">&#9670;</span>
                     <span>Success Spec ensures intent preservation</span>
                 </div>
                 <div class="landing-feature">
-                    <span style="color: #00F0FF;">◆</span>
+                    <span style="color: #00F0FF;">&#9670;</span>
                     <span>~$0.02 per optimization with full transparency</span>
                 </div>
                 <div class="landing-feature">
-                    <span style="color: #a855f7;">◆</span>
+                    <span style="color: #a855f7;">&#9670;</span>
                     <span>40 free credits monthly on Flow tier</span>
                 </div>
             </div>
         </div>
-        ''', unsafe_allow_html=True)
+        ''')
     
     with right_col:
         # Auth form section
