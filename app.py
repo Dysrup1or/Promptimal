@@ -65,9 +65,15 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
     
-    /* Main dark theme - Deep Blue/Purple Gradient */
+    /* Main dark theme - Deep Blue/Purple Gradient with Grid */
     .stApp {
-        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+        background-color: #0f172a;
+        background-image: 
+            linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%),
+            linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 100% 100%, 40px 40px, 40px 40px;
+        background-blend-mode: normal, overlay, overlay;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     
@@ -740,29 +746,29 @@ def show_auth_page():
         
         # Product Label & Features
         st.markdown('''
-        <div style="margin-top: 20px; padding-left: 10px;">
-            <div style="color: #94a3b8; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 16px; text-transform: uppercase;">
-                Product: Catalyze
-            </div>
-            
-            <div class="feature-item">
-                <span class="feature-icon">◆</span>
-                <span>5-stage AI pipeline with Judge-then-Generate</span>
-            </div>
-            <div class="feature-item">
-                <span class="feature-icon">◆</span>
-                <span>Success Spec ensures intent preservation</span>
-            </div>
-            <div class="feature-item">
-                <span class="feature-icon">◆</span>
-                <span>~$0.02 per optimization with full transparency</span>
-            </div>
-            <div class="feature-item">
-                <span class="feature-icon">◆</span>
-                <span>40 free credits monthly on Flow tier</span>
-            </div>
-        </div>
-        ''', unsafe_allow_html=True)
+<div style="margin-top: 20px; padding-left: 10px;">
+    <div style="color: #94a3b8; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 16px; text-transform: uppercase;">
+        Product: Catalyze
+    </div>
+    
+    <div class="feature-item">
+        <span class="feature-icon">◆</span>
+        <span>5-stage AI pipeline with Judge-then-Generate</span>
+    </div>
+    <div class="feature-item">
+        <span class="feature-icon">◆</span>
+        <span>Success Spec ensures intent preservation</span>
+    </div>
+    <div class="feature-item">
+        <span class="feature-icon">◆</span>
+        <span>~$0.02 per optimization with full transparency</span>
+    </div>
+    <div class="feature-item">
+        <span class="feature-icon">◆</span>
+        <span>40 free credits monthly on Flow tier</span>
+    </div>
+</div>
+''', unsafe_allow_html=True)
     
     with right_col:
         # Auth form section wrapped in glass card
