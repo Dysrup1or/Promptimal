@@ -39,5 +39,10 @@ stripe>=7.0.0
 # Email (SendGrid)
 sendgrid>=6.10.0
 
+# Multimodal Integration
+google-genai>=1.0.0
+pillow>=10.0.0
+openai>=1.0.0
+
 # Development/Testing (optional - can be removed for production)
 pytest>=7.4.0
