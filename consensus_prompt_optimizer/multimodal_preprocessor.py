@@ -429,3 +429,74 @@ def estimate_multimodal_cost(
         "image_cost": image_cost,
         "total_cost": voice_cost + image_cost
     }
+
+
+# =============================================================================
+# MULTIMODAL AVAILABILITY CHECK (Task 3.3)
+# =============================================================================
+
+def check_multimodal_availability() -> Dict[str, Any]:
+    """
+    Check if multimodal features are available based on API key configuration.
+    
+    Returns:
+        Dict with:
+            - voice_available: Whether voice transcription is available
+            - image_available: Whether image analysis is available
+            - voice_reason: Reason if voice unavailable
+            - image_reason: Reason if image unavailable
+    """
+    voice_available = False
+    image_available = False
+    voice_reason = ""
+    image_reason = ""
+    
+    # Check OpenAI API key for voice
+    openai_key = os.getenv("OPENAI_API_KEY", "").strip()
+    if openai_key:
+        try:
+            from openai import OpenAI
+            voice_available = True
+        except ImportError:
+            voice_reason = "OpenAI package not installed"
+    else:
+        voice_reason = "OPENAI_API_KEY not configured"
+    
+    # Check Gemini API key for image
+    gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if gemini_key:
+        try:
+            from google import genai
+            image_available = True
+        except ImportError:
+            image_reason = "google-genai package not installed"
+    else:
+        image_reason = "GEMINI_API_KEY not configured"
+    
+    return {
+        "voice_available": voice_available,
+        "image_available": image_available,
+        "voice_reason": voice_reason,
+        "image_reason": image_reason,
+        "any_available": voice_available or image_available
+    }
+
+
+class MultimodalError(Exception):
+    """Base exception for multimodal processing errors."""
+    pass
+
+
+class VoiceTranscriptionError(MultimodalError):
+    """Error during voice transcription."""
+    pass
+
+
+class ImageAnalysisError(MultimodalError):
+    """Error during image analysis."""
+    pass
+
+
+class MultimodalNotAvailableError(MultimodalError):
+    """Multimodal features not available due to missing configuration."""
+    pass
