@@ -211,6 +211,43 @@ class UsageService:
         self._snapshot_all_usage()
         return updated_usage
     
+    def increment_usage_by(self, user_id: int, amount: int = 1, month: int = None, year: int = None) -> Usage:
+        """
+        Increment usage count by a specified amount (for multimodal requests).
+        
+        Args:
+            user_id: The user's ID
+            amount: Number of credits to deduct (1 for text-only, 2 for multimodal)
+            month: Month number (1-12). Defaults to current month.
+            year: Year number. Defaults to current year.
+        
+        Returns:
+            Updated Usage object
+        """
+        if month is None:
+            month = datetime.now().month
+        if year is None:
+            year = datetime.now().year
+        
+        # Ensure record exists
+        self.get_usage(user_id, month, year)
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                UPDATE usage
+                SET count = count + ?, updated_at = ?
+                WHERE user_id = ? AND month = ? AND year = ?
+            """, (amount, datetime.now().isoformat(), user_id, month, year))
+            conn.commit()
+        
+        # Return updated usage
+        updated_usage = self.get_usage(user_id, month, year)
+        log_usage_event(user_id, "increment_multimodal", count=updated_usage.count, amount=amount, month=month, year=year)
+        self._snapshot_all_usage()
+        return updated_usage
+
     def check_limit(self, user_id: int, tier: str, month: int = None, year: int = None) -> tuple[bool, int, Optional[int]]:
         """
         Check if user is within their usage limit.
