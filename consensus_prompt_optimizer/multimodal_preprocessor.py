@@ -21,6 +21,80 @@ from .config import (
 )
 
 
+def _detect_audio_suffix(audio_bytes: bytes) -> str:
+    """Best-effort container sniffing for common audio formats."""
+    if not audio_bytes:
+        return ""
+
+    # WAV: RIFF....WAVE
+    if len(audio_bytes) >= 12 and audio_bytes[0:4] == b"RIFF" and audio_bytes[8:12] == b"WAVE":
+        return ".wav"
+
+    # MP3: ID3 tag or frame sync
+    if audio_bytes.startswith(b"ID3"):
+        return ".mp3"
+    if len(audio_bytes) >= 2 and audio_bytes[0] == 0xFF and (audio_bytes[1] & 0xE0) == 0xE0:
+        return ".mp3"
+
+    # OGG
+    if audio_bytes.startswith(b"OggS"):
+        return ".ogg"
+
+    # FLAC
+    if audio_bytes.startswith(b"fLaC"):
+        return ".flac"
+
+    # WEBM (EBML)
+    if audio_bytes.startswith(b"\x1A\x45\xDF\xA3"):
+        return ".webm"
+
+    # MP4/M4A family (ftyp box)
+    if len(audio_bytes) >= 12 and audio_bytes[4:8] == b"ftyp":
+        # Most voice recordings in browsers are m4a/mp4 or similar
+        return ".m4a"
+
+    return ""
+
+
+def _wav_data_chunk_size(audio_bytes: bytes) -> Optional[int]:
+    """Return WAV 'data' chunk size if parseable, else None."""
+    if len(audio_bytes) < 12:
+        return None
+    if not (audio_bytes[0:4] == b"RIFF" and audio_bytes[8:12] == b"WAVE"):
+        return None
+
+    # Walk chunks: 12-byte RIFF header then repeated [4-byte id][4-byte size][data]
+    offset = 12
+    while offset + 8 <= len(audio_bytes):
+        chunk_id = audio_bytes[offset : offset + 4]
+        chunk_size = int.from_bytes(audio_bytes[offset + 4 : offset + 8], "little", signed=False)
+        offset += 8
+
+        if chunk_id == b"data":
+            return chunk_size
+
+        # Chunks are word-aligned
+        offset += chunk_size
+        if chunk_size % 2 == 1:
+            offset += 1
+
+    return None
+
+
+def _is_effectively_empty_audio(audio_bytes: bytes) -> bool:
+    """Heuristics: treat tiny recordings / WAV with 0 data as empty."""
+    if not audio_bytes:
+        return True
+    if len(audio_bytes) < 512:
+        return True
+
+    data_size = _wav_data_chunk_size(audio_bytes)
+    if data_size is not None and data_size == 0:
+        return True
+
+    return False
+
+
 # =============================================================================
 # VOICE TRANSCRIPTION (Task 2.1)
 # =============================================================================
@@ -43,11 +117,38 @@ async def transcribe_voice(audio_bytes: bytes, filename: str = "audio.webm") -> 
     """
     try:
         from openai import OpenAI
+
+        if _is_effectively_empty_audio(audio_bytes):
+            return {
+                "text": "",
+                "duration_seconds": 0,
+                "cost": 0,
+                "success": False,
+                "error": "No audio captured. Please re-record and try again.",
+            }
         
         client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         
-        # Create temp file for the audio
-        suffix = Path(filename).suffix or ".webm"
+        # Create temp file for the audio.
+        # Important: OpenAI may rely on filename extension/MIME. Streamlit recordings
+        # can be WAV even when the UI doesn't provide a filename.
+        requested_suffix = Path(filename).suffix.lower() if filename else ""
+        detected_suffix = _detect_audio_suffix(audio_bytes)
+
+        # Validate against supported formats using the most reliable suffix.
+        effective_suffix = detected_suffix or requested_suffix
+        effective_name = f"audio{effective_suffix or '.webm'}"
+        is_valid, validation_msg = validate_audio_file(audio_bytes, effective_name)
+        if not is_valid:
+            return {
+                "text": "",
+                "duration_seconds": 0,
+                "cost": 0,
+                "success": False,
+                "error": validation_msg,
+            }
+
+        suffix = effective_suffix or ".webm"
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
             tmp.write(audio_bytes)
             tmp_path = tmp.name
@@ -90,7 +191,9 @@ async def transcribe_voice(audio_bytes: bytes, filename: str = "audio.webm") -> 
             "error": "OpenAI package not installed. Run: pip install openai"
         }
     except Exception as e:
-        logger.error(f"Voice transcription failed: {e}")
+        detected = _detect_audio_suffix(audio_bytes)
+        size = len(audio_bytes) if audio_bytes else 0
+        logger.error(f"Voice transcription failed: {e} (bytes={size}, detected={detected}, filename={filename})")
         return {
             "text": "",
             "duration_seconds": 0,
@@ -125,7 +228,7 @@ async def analyze_image(image_bytes: bytes, filename: str = "image.png") -> Dict
     """
     try:
         from google import genai
-        from google.genai import types
+        from google.genai import types  # type: ignore
         
         # Initialize Gemini client
         client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
@@ -224,18 +327,8 @@ def _extract_section(text: str, section_name: str) -> str:
                     section_lines.append(line.strip())
         
         return ' '.join(section_lines)
-    except:
-        # Backwards/forwards compatible keys:
-        # - app.py currently reads `voice`/`image`
-        # - other callers may read `voice_available`/`image_available`
-        return {
-            "voice": voice_available,
-            "image": image_available,
-            "voice_available": voice_available,
-            "image_available": image_available,
-            "voice_reason": voice_reason,
-            "image_reason": image_reason,
-        }
+    except Exception:
+        return ""
 
 async def combine_multimodal_inputs(
     text_input: str = "",

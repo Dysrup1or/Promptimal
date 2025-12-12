@@ -118,6 +118,9 @@ pyrightconfig.json
 # PROJECT-SPECIFIC
 # ----------------------------------------------
 # Prompt cache (generated, can be large)
+
+# One-off admin/bootstrap scripts (should not ship)
+create_production_admin.py
 .prompt_cache/
 
 # Output files (regenerated each run)

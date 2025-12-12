@@ -1182,8 +1182,18 @@ with col_center:
 
     # Lightweight deploy/build indicator (helps confirm Railway is running latest code)
     build_sha = (os.getenv("RAILWAY_GIT_COMMIT_SHA") or os.getenv("GIT_COMMIT") or "").strip()
+    try:
+        import hashlib
+
+        with open(__file__, "rb") as f:
+            app_fingerprint = hashlib.sha1(f.read()).hexdigest()[:7]
+    except Exception:
+        app_fingerprint = "unknown"
+
     if build_sha:
-        st.caption(f"Build: {build_sha[:7]}")
+        st.caption(f"Build: {build_sha[:7]} • App: {app_fingerprint}")
+    else:
+        st.caption(f"Build: unknown • App: {app_fingerprint}")
     
     # Initialize multimodal session state
     if 'audio_input' not in st.session_state:
@@ -1218,9 +1228,19 @@ with col_center:
                 label_visibility="collapsed"
             )
             if audio_bytes:
-                st.session_state.audio_input = audio_bytes
-                st.success("✓ Voice recorded successfully!")
-                st.audio(audio_bytes, format="audio/wav")
+                try:
+                    recorded = audio_bytes.getvalue()
+                except Exception:
+                    recorded = None
+
+                # Guard: Streamlit can return a WAV header with no samples when nothing is captured.
+                if recorded and len(recorded) >= 512:
+                    st.session_state.audio_input = audio_bytes
+                    st.success("✓ Voice recorded successfully!")
+                    st.audio(audio_bytes, format="audio/wav")
+                else:
+                    st.session_state.audio_input = None
+                    st.warning("No audio captured. Please re-record and try again.")
         else:
             st.markdown("""
             <p style="color: #94a3b8; font-size: 0.75rem; text-align: center; margin-top: 8px;">
@@ -1369,14 +1389,30 @@ if run_button and (idea or st.session_state.get('audio_input') or st.session_sta
                         st.info("🔄 Preprocessing multimodal inputs...")
                         
                         # Convert audio/image to bytes format if present
-                        audio_bytes_data = audio_data.getvalue() if audio_data else None
-                        image_bytes_data = image_data.getvalue() if image_data else None
+                        if audio_data is not None and hasattr(audio_data, "getvalue"):
+                            audio_bytes_data = audio_data.getvalue()
+                        elif isinstance(audio_data, (bytes, bytearray)):
+                            audio_bytes_data = bytes(audio_data)
+                        else:
+                            audio_bytes_data = None
+
+                        if image_data is not None and hasattr(image_data, "getvalue"):
+                            image_bytes_data = image_data.getvalue()
+                        elif isinstance(image_data, (bytes, bytearray)):
+                            image_bytes_data = bytes(image_data)
+                        else:
+                            image_bytes_data = None
+
+                        audio_filename = getattr(audio_data, "name", None) or "audio.webm"
+                        image_filename = getattr(image_data, "name", None) or "image.png"
                         
                         # Call multimodal preprocessor (async)
                         preprocessed = run_async(preprocess_multimodal_input(
                             text_input=idea if idea else "",
                             audio_bytes=audio_bytes_data,
-                            image_bytes=image_bytes_data
+                            audio_filename=audio_filename,
+                            image_bytes=image_bytes_data,
+                            image_filename=image_filename,
                         ))
                         
                         # Get the combined prompt from preprocessing

@@ -32,6 +32,8 @@ from consensus_prompt_optimizer.multimodal_preprocessor import (
     validate_audio_file,
     validate_image_file,
     estimate_multimodal_cost,
+    _detect_audio_suffix,
+    _is_effectively_empty_audio,
     MultimodalError,
     VoiceTranscriptionError,
     ImageAnalysisError,
@@ -150,6 +152,68 @@ class TestAudioValidation:
         """Test empty audio bytes are technically valid (size check only)."""
         is_valid, _ = validate_audio_file(b"", "test.mp3")
         assert is_valid is True  # Empty but valid format
+
+
+class TestAudioSniffing:
+    """Test audio container sniffing used for transcription."""
+
+    def test_detects_wav(self):
+        wav_bytes = b"RIFF" + b"\x00\x00\x00\x00" + b"WAVE" + b"\x00" * 64
+        assert _detect_audio_suffix(wav_bytes) == ".wav"
+
+    def test_detects_webm(self):
+        webm_bytes = b"\x1A\x45\xDF\xA3" + b"\x00" * 64
+        assert _detect_audio_suffix(webm_bytes) == ".webm"
+
+    def test_empty_wav_header_is_effectively_empty(self):
+        # Minimal RIFF/WAVE header with a data chunk of size 0
+        header = (
+            b"RIFF" + (36).to_bytes(4, "little") + b"WAVE" +
+            b"fmt " + (16).to_bytes(4, "little") + (1).to_bytes(2, "little") + (1).to_bytes(2, "little") +
+            (16000).to_bytes(4, "little") + (32000).to_bytes(4, "little") + (2).to_bytes(2, "little") + (16).to_bytes(2, "little") +
+            b"data" + (0).to_bytes(4, "little")
+        )
+        assert _is_effectively_empty_audio(header) is True
+
+    @pytest.mark.asyncio
+    async def test_transcribe_voice_prefers_detected_suffix(self, monkeypatch):
+        # WAV bytes but misleading filename should still be saved as .wav
+        # Build a small-but-non-empty WAV (RIFF/WAVE + fmt + data chunk)
+        data_payload = b"\x00" * 1024
+        wav_bytes = (
+            b"RIFF" + (36 + len(data_payload)).to_bytes(4, "little") + b"WAVE" +
+            b"fmt " + (16).to_bytes(4, "little") + (1).to_bytes(2, "little") + (1).to_bytes(2, "little") +
+            (16000).to_bytes(4, "little") + (16000 * 2).to_bytes(4, "little") + (2).to_bytes(2, "little") + (16).to_bytes(2, "little") +
+            b"data" + (len(data_payload)).to_bytes(4, "little") + data_payload
+        )
+
+        recorded = {"suffix": None}
+
+        import consensus_prompt_optimizer.multimodal_preprocessor as mp
+
+        original_named_temp = mp.tempfile.NamedTemporaryFile
+
+        def wrapped_named_temp(*args, **kwargs):
+            recorded["suffix"] = kwargs.get("suffix")
+            return original_named_temp(*args, **kwargs)
+
+        monkeypatch.setattr(mp.tempfile, "NamedTemporaryFile", wrapped_named_temp)
+
+        class DummyResponse:
+            text = "hello"
+            duration = 1.0
+
+        class DummyOpenAI:
+            def __init__(self, *args, **kwargs):
+                self.audio = MagicMock()
+                self.audio.transcriptions = MagicMock()
+                self.audio.transcriptions.create = MagicMock(return_value=DummyResponse())
+
+        monkeypatch.setattr("openai.OpenAI", DummyOpenAI)
+
+        result = await transcribe_voice(wav_bytes, filename="audio.webm")
+        assert result["success"] is True
+        assert recorded["suffix"] == ".wav"
 
 
 class TestImageValidation:
