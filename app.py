@@ -250,21 +250,16 @@ st.markdown("""
         box-shadow: 0 6px 30px rgba(168, 85, 247, 0.6), 0 0 40px rgba(0, 240, 255, 0.3) !important;
     }
     
-    /* Landing page visual panel */
-    .landing-visual {
-        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-        min-height: 90vh;
-        margin: -1rem -1rem -1rem 0;
-        padding: 40px 40px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        position: relative;
+    /* Landing page - style the first column directly */
+    .landing-left-col {
+        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%) !important;
+        min-height: 85vh;
+        padding: 40px 30px !important;
         border-radius: 0 24px 24px 0;
+        position: relative;
     }
     
-    .landing-visual::before {
+    .landing-left-col::before {
         content: '';
         position: absolute;
         top: 0; left: 0; right: 0; bottom: 0;
@@ -277,7 +272,7 @@ st.markdown("""
     }
     
     .landing-logo {
-        font-size: 3rem;
+        font-size: 2.5rem;
         font-weight: 800;
         color: #00F0FF;
         text-shadow: 0 0 60px rgba(0, 240, 255, 0.5);
@@ -285,8 +280,6 @@ st.markdown("""
         letter-spacing: 0.25em;
         text-align: center;
         margin-bottom: 8px;
-        position: relative;
-        z-index: 1;
     }
     
     .landing-tagline {
@@ -295,24 +288,20 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
         letter-spacing: 0.02em;
         text-align: center;
-        margin-bottom: 30px;
-        position: relative;
-        z-index: 1;
+        margin-bottom: 24px;
     }
     
-    .landing-hero-image {
-        position: relative;
-        z-index: 1;
-        max-width: 100%;
+    .landing-hero {
+        width: 100%;
+        max-width: 500px;
         border-radius: 16px;
-        margin-bottom: 30px;
+        margin: 0 auto 24px auto;
+        display: block;
     }
     
     .landing-features {
-        position: relative;
-        z-index: 1;
-        width: 100%;
-        max-width: 400px;
+        max-width: 380px;
+        margin: 0 auto;
     }
     
     .landing-feature {
@@ -745,51 +734,36 @@ def show_auth_page():
     left_col, right_col = st.columns([1.2, 0.8], gap="small")
     
     with left_col:
-        # Visual branding section - using CSS class
-        st.markdown('<div class="landing-visual">', unsafe_allow_html=True)
+        # All visual content in ONE markdown block to ensure proper rendering
+        hero_url = "https://raw.githubusercontent.com/Dysrup1or/Promptimal/main/assets/hero_robots.png"
         
-        # Logo
-        st.markdown('<h1 class="landing-logo">CATALYZE</h1>', unsafe_allow_html=True)
-        st.markdown('<p class="landing-tagline">Transform your ideas into bulletproof prompts</p>', unsafe_allow_html=True)
-        
-        # Hero image - Using placeholder, replace with your hosted image URL
-        # To use local: st.image("assets/hero.png", use_container_width=True)
-        hero_image_url = "https://raw.githubusercontent.com/Dysrup1or/Promptimal/main/assets/hero_robots.png"
-        try:
-            st.image(hero_image_url, use_container_width=True)
-        except:
-            # Fallback if image not found
-            st.markdown('''
-            <div style="height: 200px; display: flex; align-items: center; justify-content: center; 
-                        background: linear-gradient(135deg, rgba(0,240,255,0.1), rgba(168,85,247,0.1));
-                        border-radius: 16px; margin: 20px 0;">
-                <span style="color: #64748b;">🤖 AI-Powered Prompt Optimization</span>
-            </div>
-            ''', unsafe_allow_html=True)
-        
-        # Features
-        st.markdown('''
-        <div class="landing-features">
-            <div class="landing-feature">
-                <span style="color: #00F0FF;">◆</span>
-                <span>5-stage AI pipeline with Judge-then-Generate</span>
-            </div>
-            <div class="landing-feature">
-                <span style="color: #a855f7;">◆</span>
-                <span>Success Spec ensures intent preservation</span>
-            </div>
-            <div class="landing-feature">
-                <span style="color: #00F0FF;">◆</span>
-                <span>~$0.02 per optimization with full transparency</span>
-            </div>
-            <div class="landing-feature">
-                <span style="color: #a855f7;">◆</span>
-                <span>40 free credits monthly on Flow tier</span>
+        st.markdown(f'''
+        <div class="landing-left-col">
+            <h1 class="landing-logo">CATALYZE</h1>
+            <p class="landing-tagline">Transform your ideas into bulletproof prompts</p>
+            
+            <img src="{hero_url}" class="landing-hero" alt="AI Prompt Optimization" onerror="this.style.display='none'">
+            
+            <div class="landing-features">
+                <div class="landing-feature">
+                    <span style="color: #00F0FF;">◆</span>
+                    <span>5-stage AI pipeline with Judge-then-Generate</span>
+                </div>
+                <div class="landing-feature">
+                    <span style="color: #a855f7;">◆</span>
+                    <span>Success Spec ensures intent preservation</span>
+                </div>
+                <div class="landing-feature">
+                    <span style="color: #00F0FF;">◆</span>
+                    <span>~$0.02 per optimization with full transparency</span>
+                </div>
+                <div class="landing-feature">
+                    <span style="color: #a855f7;">◆</span>
+                    <span>40 free credits monthly on Flow tier</span>
+                </div>
             </div>
         </div>
         ''', unsafe_allow_html=True)
-        
-        st.markdown('</div>', unsafe_allow_html=True)
     
     with right_col:
         # Auth form section
