@@ -1148,6 +1148,13 @@ with col_center:
     multimodal_available = check_multimodal_availability()
     voice_available = multimodal_available.get("voice", False)
     image_available = multimodal_available.get("image", False)
+    voice_reason = multimodal_available.get("voice_reason", "Voice unavailable")
+    image_reason = multimodal_available.get("image_reason", "Image unavailable")
+
+    # Lightweight deploy/build indicator (helps confirm Railway is running latest code)
+    build_sha = (os.getenv("RAILWAY_GIT_COMMIT_SHA") or os.getenv("GIT_COMMIT") or "").strip()
+    if build_sha:
+        st.caption(f"Build: {build_sha[:7]}")
     
     # Initialize multimodal session state
     if 'audio_input' not in st.session_state:
@@ -1188,9 +1195,9 @@ with col_center:
         else:
             st.markdown("""
             <p style="color: #94a3b8; font-size: 0.75rem; text-align: center; margin-top: 8px;">
-                ⚠️ Requires OpenAI API key
+                ⚠️ {reason}
             </p>
-            """, unsafe_allow_html=True)
+            """.format(reason=voice_reason), unsafe_allow_html=True)
     
     with col_image:
         st.markdown("""
@@ -1215,9 +1222,9 @@ with col_center:
         else:
             st.markdown("""
             <p style="color: #94a3b8; font-size: 0.75rem; text-align: center; margin-top: 8px;">
-                ⚠️ Requires Gemini API key
+                ⚠️ {reason}
             </p>
-            """, unsafe_allow_html=True)
+            """.format(reason=image_reason), unsafe_allow_html=True)
     
     # Show multimodal status and clear button
     has_multimodal = st.session_state.audio_input or st.session_state.image_input
