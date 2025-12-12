@@ -57,7 +57,7 @@ st.set_page_config(
 
 
 # ============================================================================
-# CUSTOM CSS - Neo-Brutalist Dark Theme with Cyan Accents
+# CUSTOM CSS - Modern Glassmorphism Theme
 # ============================================================================
 st.markdown("""
 <style>
@@ -65,118 +65,113 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
     
-    /* Main dark theme - Pure Black */
+    /* Main dark theme - Deep Blue/Purple Gradient */
     .stApp {
-        background-color: #000000;
+        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     
-    /* Sidebar styling - Dark charcoal */
+    /* Sidebar styling - Dark transparent */
     [data-testid="stSidebar"] {
-        background-color: #0A0A0A;
-        border-right: 1px solid rgba(0, 240, 255, 0.1);
+        background-color: rgba(15, 23, 42, 0.9);
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
     }
     
     [data-testid="stSidebar"] .stMarkdown {
-        color: #c9d1d9;
+        color: #cbd5e1;
     }
     
-    /* Header with grid aesthetic - CATALYZE branding */
-    .main-header {
-        font-size: 4rem;
-        font-weight: 800;
-        color: #00F0FF;
-        text-shadow: 0 0 40px rgba(0, 240, 255, 0.5), 0 0 80px rgba(0, 240, 255, 0.3);
-        margin-bottom: 0;
-        padding: 50px 0 15px 0;
-        font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
-        letter-spacing: 0.35em;
-        text-align: center;
-        position: relative;
-        background: linear-gradient(180deg, transparent 0%, rgba(0, 240, 255, 0.02) 50%, transparent 100%);
+    /* Glassmorphism Card */
+    .glass-card {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 40px;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     }
-    
-    /* Grid overlay effect behind header */
-    .main-header::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 700px;
-        height: 100%;
-        background-image: 
-            linear-gradient(rgba(0, 240, 255, 0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0, 240, 255, 0.04) 1px, transparent 1px);
-        background-size: 25px 25px;
-        pointer-events: none;
-        z-index: -1;
-        mask-image: radial-gradient(ellipse 60% 80% at 50% 50%, black 40%, transparent 100%);
-        -webkit-mask-image: radial-gradient(ellipse 60% 80% at 50% 50%, black 40%, transparent 100%);
-    }
-    
-    .sub-header {
-        font-size: 1rem;
-        color: #64748b;
-        margin-top: 12px;
-        margin-bottom: 24px;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        text-align: center;
-        letter-spacing: 0.05em;
-        font-weight: 400;
-    }
-    
-    /* Card styling for output */
-    .output-card {
-        background: #0A0A0A;
-        border: 1px solid rgba(0, 240, 255, 0.2);
+
+    /* Primary Button - Green */
+    .stButton > button {
+        background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+        color: white;
+        border: none;
         border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        padding: 0.5rem 1rem;
+    }
+    .stButton > button:hover {
+        background: linear-gradient(90deg, #16a34a 0%, #15803d 100%);
+        box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
+        border: none;
+        color: white;
+    }
+    
+    /* Secondary Button (Ghost) */
+    .stButton > button[kind="secondary"] {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #e2e8f0;
+    }
+    
+    /* Input fields */
+    .stTextInput > div > div > input {
+        background-color: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+        border-radius: 8px;
+    }
+    .stTextInput > div > div > input:focus {
+        border-color: #22c55e;
+        box-shadow: 0 0 0 1px #22c55e;
+    }
+
+    /* Header styling */
+    .main-header {
+        font-size: 3rem;
+        font-weight: 800;
+        color: white;
+        margin-bottom: 0;
+        padding: 20px 0;
+        font-family: 'Inter', sans-serif;
+        text-align: center;
+    }
+    
+    /* Feature list styling */
+    .feature-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+        color: #e2e8f0;
+        font-size: 0.95rem;
+    }
+    .feature-icon {
+        color: #22c55e;
+        font-size: 1.2rem;
+    }
+    
+    /* Card styling for output (legacy support) */
+    .output-card {
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
         padding: 24px;
         margin: 16px 0;
-    }
-    
-    .output-card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 16px;
-        padding-bottom: 12px;
-        border-bottom: 1px solid rgba(0, 240, 255, 0.1);
     }
     
     .output-card-title {
         font-size: 1.25rem;
         font-weight: 600;
-        color: #00F0FF;
+        color: #22c55e;
         margin: 0;
-    }
-    
-    .output-card-actions {
-        display: flex;
-        gap: 8px;
-    }
-    
-    .action-btn {
-        background: transparent;
-        border: 1px solid rgba(0, 240, 255, 0.3);
-        color: #00F0FF;
-        padding: 6px 12px;
-        border-radius: 4px;
-        font-size: 0.85rem;
-        cursor: pointer;
-        transition: all 0.2s;
-        font-family: 'JetBrains Mono', monospace;
-    }
-    
-    .action-btn:hover {
-        background: rgba(0, 240, 255, 0.1);
-        border-color: #00F0FF;
-        box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
     }
     
     /* Prompt output text area */
     .prompt-output {
-        background-color: #000000;
+        background-color: rgba(15, 23, 42, 0.8);
         color: #F8F8F8;
         padding: 20px;
         border-radius: 8px;
@@ -184,13 +179,13 @@ st.markdown("""
         font-size: 0.9rem;
         white-space: pre-wrap;
         line-height: 1.7;
-        border: 1px solid rgba(0, 240, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
     
     /* Input field styling */
     .stTextArea textarea {
-        background-color: rgba(255, 255, 255, 0.05) !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        background-color: rgba(15, 23, 42, 0.6) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
         border-radius: 8px !important;
         color: #FFFFFF !important;
         font-size: 0.95rem !important;
@@ -735,74 +730,56 @@ def show_auth_page():
         return
     
     # Split layout: Visual left, Auth right
-    left_col, right_col = st.columns([1.2, 0.8], gap="small")
+    left_col, right_col = st.columns([1.2, 0.8], gap="large")
     
     with left_col:
-        # Background container with gradient
-        st.markdown('''
-        <style>
-            [data-testid="stVerticalBlock"]:has(.landing-content) {
-                background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-                padding: 40px 30px;
-                border-radius: 0 24px 24px 0;
-                min-height: 85vh;
-            }
-        </style>
-        ''', unsafe_allow_html=True)
-        
-        # Logo and tagline using markdown (simpler, more reliable)
-        st.markdown('<div class="landing-content"></div>', unsafe_allow_html=True)
-        st.markdown('<h1 style="font-size: 2.5rem; font-weight: 800; color: #00F0FF; text-shadow: 0 0 60px rgba(0, 240, 255, 0.5); font-family: Inter, sans-serif; letter-spacing: 0.25em; text-align: center; margin-bottom: 8px;">CATALYZE</h1>', unsafe_allow_html=True)
-        st.markdown('<p style="color: #94a3b8; font-size: 1rem; font-family: Inter, sans-serif; letter-spacing: 0.02em; text-align: center; margin-bottom: 24px;">Transform your ideas into bulletproof prompts</p>', unsafe_allow_html=True)
+        st.markdown('<div style="height: 40px;"></div>', unsafe_allow_html=True)
         
         # Hero image
         st.image("assets/hero_robots.png", use_container_width=True)
         
-        # Features list
+        # Product Label & Features
         st.markdown('''
-        <div style="max-width: 380px; margin: 24px auto 0 auto;">
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px; color: #64748b; font-size: 0.9rem;">
-                <span style="color: #00F0FF;">◆</span>
+        <div style="margin-top: 20px; padding-left: 10px;">
+            <div style="color: #94a3b8; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.05em; margin-bottom: 16px; text-transform: uppercase;">
+                Product: Catalyze
+            </div>
+            
+            <div class="feature-item">
+                <span class="feature-icon">◆</span>
                 <span>5-stage AI pipeline with Judge-then-Generate</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px; color: #64748b; font-size: 0.9rem;">
-                <span style="color: #a855f7;">◆</span>
+            <div class="feature-item">
+                <span class="feature-icon">◆</span>
                 <span>Success Spec ensures intent preservation</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px; color: #64748b; font-size: 0.9rem;">
-                <span style="color: #00F0FF;">◆</span>
+            <div class="feature-item">
+                <span class="feature-icon">◆</span>
                 <span>~$0.02 per optimization with full transparency</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 12px; color: #64748b; font-size: 0.9rem;">
-                <span style="color: #a855f7;">◆</span>
+            <div class="feature-item">
+                <span class="feature-icon">◆</span>
                 <span>40 free credits monthly on Flow tier</span>
             </div>
         </div>
         ''', unsafe_allow_html=True)
     
     with right_col:
-        # Auth form section
-        st.markdown("<div style='height: 60px;'></div>", unsafe_allow_html=True)
-        
-        # Brand header
-        st.markdown('''
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 50px;">
-            <span style="color: #00F0FF; font-size: 1.5rem;">◆</span>
-            <span style="font-size: 1.3rem; font-weight: 700; color: #00F0FF; font-family: Inter, sans-serif; letter-spacing: 0.15em;">CATALYZE</span>
-        </div>
-        ''', unsafe_allow_html=True)
+        # Auth form section wrapped in glass card
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         
         # Auth tabs
         auth_tab1, auth_tab2 = st.tabs(["Sign in", "Sign up"])
         
         with auth_tab1:
-            st.markdown("<h2 style='font-size: 1.75rem; font-weight: 600; color: #f1f5f9; font-family: Inter, sans-serif; margin-bottom: 8px;'>Welcome back</h2>", unsafe_allow_html=True)
-            st.markdown("<p style='color: #64748b; font-size: 0.95rem; margin-bottom: 24px;'>Enter your credentials to access your account</p>", unsafe_allow_html=True)
+            st.markdown("<h2 style='font-size: 2rem; font-weight: 700; color: white; font-family: Inter, sans-serif; margin-bottom: 8px;'>Welcome back</h2>", unsafe_allow_html=True)
+            st.markdown("<p style='color: #94a3b8; font-size: 0.95rem; margin-bottom: 32px;'>Enter your credentials to access your account.</p>", unsafe_allow_html=True)
             
             with st.form("login_form"):
                 email = st.text_input("Email", placeholder="you@example.com")
                 password = st.text_input("Password", type="password", placeholder="••••••••")
                 
+                st.markdown("<div style='height: 16px'></div>", unsafe_allow_html=True)
                 submitted = st.form_submit_button("Sign in", use_container_width=True, type="primary")
                 
                 if submitted:
@@ -821,8 +798,8 @@ def show_auth_page():
                 st.rerun()
         
         with auth_tab2:
-            st.markdown("<h2 style='font-size: 1.75rem; font-weight: 600; color: #f1f5f9; font-family: Inter, sans-serif; margin-bottom: 8px;'>Create account</h2>", unsafe_allow_html=True)
-            st.markdown("<p style='color: #64748b; font-size: 0.95rem; margin-bottom: 24px;'>Start optimizing your prompts today</p>", unsafe_allow_html=True)
+            st.markdown("<h2 style='font-size: 2rem; font-weight: 700; color: white; font-family: Inter, sans-serif; margin-bottom: 8px;'>Create account</h2>", unsafe_allow_html=True)
+            st.markdown("<p style='color: #94a3b8; font-size: 0.95rem; margin-bottom: 32px;'>Start optimizing your prompts today.</p>", unsafe_allow_html=True)
             
             with st.form("register_form"):
                 reg_email = st.text_input("Email", placeholder="you@example.com", key="reg_email")
@@ -836,6 +813,7 @@ def show_auth_page():
                 reg_password = st.text_input("Password", type="password", placeholder="Min 8 characters", key="reg_pass")
                 confirm_password = st.text_input("Confirm Password", type="password", placeholder="••••••••", key="confirm_pass")
                 
+                st.markdown("<div style='height: 16px'></div>", unsafe_allow_html=True)
                 submitted = st.form_submit_button("Create Account", use_container_width=True, type="primary")
                 
                 if submitted:
@@ -852,6 +830,8 @@ def show_auth_page():
                         st.rerun()
             
             st.markdown("<p style='color: #64748b; font-size: 0.85rem; text-align: center; margin-top: 16px;'>Flow tier includes 40 free Catalyze Credits/month</p>", unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 # Check if user is authenticated
