@@ -1,0 +1,431 @@
+"""
+Multimodal Preprocessor Module for CATALYZE
+============================================
+Handles voice transcription and image analysis preprocessing
+before the main 5-stage optimization pipeline.
+"""
+
+import os
+import base64
+import tempfile
+from typing import Optional, Dict, Any, Tuple
+from pathlib import Path
+
+from loguru import logger
+
+from .config import (
+    OPENAI_TRANSCRIBE,
+    GEMINI_VISION,
+    MULTIMODAL_PRICING,
+    MULTIMODAL_CREDIT_COST,
+)
+
+
+# =============================================================================
+# VOICE TRANSCRIPTION (Task 2.1)
+# =============================================================================
+
+async def transcribe_voice(audio_bytes: bytes, filename: str = "audio.webm") -> Dict[str, Any]:
+    """
+    Transcribe voice input using OpenAI's gpt-4o-mini-transcribe model.
+    
+    Args:
+        audio_bytes: Raw audio file bytes (supports webm, mp3, wav, m4a)
+        filename: Original filename with extension for format detection
+    
+    Returns:
+        Dict with keys:
+            - text: Transcribed text
+            - duration_seconds: Audio duration for billing
+            - cost: Estimated cost in USD
+            - success: Boolean indicating success
+            - error: Error message if failed
+    """
+    try:
+        from openai import OpenAI
+        
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        
+        # Create temp file for the audio
+        suffix = Path(filename).suffix or ".webm"
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+            tmp.write(audio_bytes)
+            tmp_path = tmp.name
+        
+        try:
+            # Call OpenAI transcription API
+            with open(tmp_path, "rb") as audio_file:
+                response = client.audio.transcriptions.create(
+                    model=OPENAI_TRANSCRIBE,
+                    file=audio_file,
+                    response_format="verbose_json"  # Get duration info
+                )
+            
+            # Extract results
+            text = response.text
+            duration = getattr(response, 'duration', 60.0)  # Default 1 min if not provided
+            cost = (duration / 60.0) * MULTIMODAL_PRICING["voice_transcription_per_minute"]
+            
+            logger.info(f"Voice transcription complete: {len(text)} chars, {duration:.1f}s, ${cost:.4f}")
+            
+            return {
+                "text": text,
+                "duration_seconds": duration,
+                "cost": cost,
+                "success": True,
+                "error": None
+            }
+            
+        finally:
+            # Clean up temp file
+            os.unlink(tmp_path)
+            
+    except ImportError:
+        logger.error("OpenAI package not installed")
+        return {
+            "text": "",
+            "duration_seconds": 0,
+            "cost": 0,
+            "success": False,
+            "error": "OpenAI package not installed. Run: pip install openai"
+        }
+    except Exception as e:
+        logger.error(f"Voice transcription failed: {e}")
+        return {
+            "text": "",
+            "duration_seconds": 0,
+            "cost": 0,
+            "success": False,
+            "error": str(e)
+        }
+
+
+# =============================================================================
+# IMAGE ANALYSIS (Task 2.2)
+# =============================================================================
+
+async def analyze_image(image_bytes: bytes, filename: str = "image.png") -> Dict[str, Any]:
+    """
+    Analyze image content using Gemini 2.0 Flash vision model (FREE).
+    Extracts text, UI elements, and contextual information.
+    
+    Args:
+        image_bytes: Raw image file bytes (supports png, jpg, webp, gif)
+        filename: Original filename for format detection
+    
+    Returns:
+        Dict with keys:
+            - description: Detailed description of image content
+            - extracted_text: Any text visible in the image (OCR)
+            - ui_elements: Identified UI components if applicable
+            - context: Inferred context/purpose
+            - cost: Always 0 (Gemini Flash is free)
+            - success: Boolean indicating success
+            - error: Error message if failed
+    """
+    try:
+        from google import genai
+        from google.genai import types
+        
+        # Initialize Gemini client
+        client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+        
+        # Determine MIME type
+        suffix = Path(filename).suffix.lower()
+        mime_map = {
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".webp": "image/webp",
+            ".gif": "image/gif"
+        }
+        mime_type = mime_map.get(suffix, "image/png")
+        
+        # Create image part
+        image_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
+        
+        # Comprehensive analysis prompt
+        analysis_prompt = """Analyze this image thoroughly and provide:
+
+1. **Description**: What does this image show? Be specific and detailed.
+2. **Extracted Text**: Any visible text, labels, or written content (perform OCR).
+3. **UI Elements**: If this is a screenshot/UI, identify buttons, forms, menus, etc.
+4. **Context**: What is the likely purpose or context of this image?
+5. **Prompt Optimization Hints**: What aspects should be emphasized when creating a prompt related to this image?
+
+Format your response as structured text with clear sections."""
+
+        # Call Gemini API
+        response = client.models.generate_content(
+            model=GEMINI_VISION,
+            contents=[analysis_prompt, image_part]
+        )
+        
+        analysis_text = response.text
+        
+        logger.info(f"Image analysis complete: {len(analysis_text)} chars")
+        
+        return {
+            "description": analysis_text,
+            "extracted_text": _extract_section(analysis_text, "Extracted Text"),
+            "ui_elements": _extract_section(analysis_text, "UI Elements"),
+            "context": _extract_section(analysis_text, "Context"),
+            "cost": MULTIMODAL_PRICING["image_analysis"],  # FREE
+            "success": True,
+            "error": None
+        }
+        
+    except ImportError:
+        logger.error("Google GenAI package not installed")
+        return {
+            "description": "",
+            "extracted_text": "",
+            "ui_elements": "",
+            "context": "",
+            "cost": 0,
+            "success": False,
+            "error": "Google GenAI package not installed. Run: pip install google-genai"
+        }
+    except Exception as e:
+        logger.error(f"Image analysis failed: {e}")
+        return {
+            "description": "",
+            "extracted_text": "",
+            "ui_elements": "",
+            "context": "",
+            "cost": 0,
+            "success": False,
+            "error": str(e)
+        }
+
+
+def _extract_section(text: str, section_name: str) -> str:
+    """Extract a section from the analysis response."""
+    try:
+        lines = text.split('\n')
+        in_section = False
+        section_lines = []
+        
+        for line in lines:
+            if section_name.lower() in line.lower() and ('**' in line or ':' in line):
+                in_section = True
+                # Get content after the header if on same line
+                if ':' in line:
+                    content = line.split(':', 1)[1].strip()
+                    if content:
+                        section_lines.append(content)
+                continue
+            
+            if in_section:
+                # Stop at next section
+                if line.strip().startswith('**') or (line.strip() and line.strip()[0].isdigit() and '.' in line[:3]):
+                    break
+                if line.strip():
+                    section_lines.append(line.strip())
+        
+        return ' '.join(section_lines)
+    except:
+        return ""
+
+
+# =============================================================================
+# INPUT COMBINER (Task 2.3)
+# =============================================================================
+
+async def combine_multimodal_inputs(
+    text_input: str = "",
+    voice_result: Optional[Dict[str, Any]] = None,
+    image_result: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """
+    Combine text, voice transcription, and image analysis into a unified prompt.
+    
+    Args:
+        text_input: Direct text input from user
+        voice_result: Result from transcribe_voice()
+        image_result: Result from analyze_image()
+    
+    Returns:
+        Dict with keys:
+            - combined_prompt: Unified prompt text ready for optimization
+            - sources: List of input sources used
+            - total_cost: Combined preprocessing cost
+            - is_multimodal: Whether multimodal inputs were used
+            - credit_cost: Credits to deduct (1 for text-only, 2 for multimodal)
+    """
+    combined_parts = []
+    sources = []
+    total_cost = 0.0
+    is_multimodal = False
+    
+    # Add text input
+    if text_input and text_input.strip():
+        combined_parts.append(f"**User Request:**\n{text_input.strip()}")
+        sources.append("text")
+    
+    # Add voice transcription
+    if voice_result and voice_result.get("success") and voice_result.get("text"):
+        voice_text = voice_result["text"].strip()
+        if voice_text:
+            combined_parts.append(f"**Voice Input (Transcribed):**\n{voice_text}")
+            sources.append("voice")
+            total_cost += voice_result.get("cost", 0)
+            is_multimodal = True
+    
+    # Add image analysis
+    if image_result and image_result.get("success") and image_result.get("description"):
+        image_desc = image_result["description"].strip()
+        if image_desc:
+            combined_parts.append(f"**Image Context:**\n{image_desc}")
+            sources.append("image")
+            total_cost += image_result.get("cost", 0)
+            is_multimodal = True
+    
+    # Combine all parts
+    if combined_parts:
+        combined_prompt = "\n\n---\n\n".join(combined_parts)
+    else:
+        combined_prompt = ""
+    
+    # Determine credit cost
+    credit_cost = MULTIMODAL_CREDIT_COST if is_multimodal else 1
+    
+    logger.info(f"Combined inputs from {sources}, multimodal={is_multimodal}, credits={credit_cost}")
+    
+    return {
+        "combined_prompt": combined_prompt,
+        "sources": sources,
+        "total_cost": total_cost,
+        "is_multimodal": is_multimodal,
+        "credit_cost": credit_cost
+    }
+
+
+# =============================================================================
+# MAIN PREPROCESSOR FUNCTION (Task 2.4)
+# =============================================================================
+
+async def preprocess_multimodal_input(
+    text_input: str = "",
+    audio_bytes: Optional[bytes] = None,
+    audio_filename: str = "audio.webm",
+    image_bytes: Optional[bytes] = None,
+    image_filename: str = "image.png"
+) -> Dict[str, Any]:
+    """
+    Main entry point for multimodal preprocessing.
+    Processes all inputs and returns unified prompt ready for optimization.
+    
+    Args:
+        text_input: Direct text input
+        audio_bytes: Optional voice recording bytes
+        audio_filename: Voice file name with extension
+        image_bytes: Optional image bytes
+        image_filename: Image file name with extension
+    
+    Returns:
+        Dict with:
+            - combined_prompt: Ready for optimization pipeline
+            - sources: Input sources used
+            - is_multimodal: Whether voice/image was used
+            - credit_cost: Credits to deduct
+            - total_preprocessing_cost: USD cost of preprocessing
+            - voice_result: Full voice transcription result (if used)
+            - image_result: Full image analysis result (if used)
+            - errors: List of any errors encountered
+    """
+    voice_result = None
+    image_result = None
+    errors = []
+    
+    # Process voice input if provided
+    if audio_bytes:
+        logger.info(f"Processing voice input: {len(audio_bytes)} bytes")
+        voice_result = await transcribe_voice(audio_bytes, audio_filename)
+        if not voice_result["success"]:
+            errors.append(f"Voice: {voice_result['error']}")
+    
+    # Process image input if provided
+    if image_bytes:
+        logger.info(f"Processing image input: {len(image_bytes)} bytes")
+        image_result = await analyze_image(image_bytes, image_filename)
+        if not image_result["success"]:
+            errors.append(f"Image: {image_result['error']}")
+    
+    # Combine all inputs
+    combined = await combine_multimodal_inputs(
+        text_input=text_input,
+        voice_result=voice_result,
+        image_result=image_result
+    )
+    
+    return {
+        "combined_prompt": combined["combined_prompt"],
+        "sources": combined["sources"],
+        "is_multimodal": combined["is_multimodal"],
+        "credit_cost": combined["credit_cost"],
+        "total_preprocessing_cost": combined["total_cost"],
+        "voice_result": voice_result,
+        "image_result": image_result,
+        "errors": errors
+    }
+
+
+# =============================================================================
+# UTILITY FUNCTIONS
+# =============================================================================
+
+def validate_audio_file(audio_bytes: bytes, filename: str) -> Tuple[bool, str]:
+    """Validate audio file format and size."""
+    SUPPORTED_FORMATS = [".webm", ".mp3", ".wav", ".m4a", ".ogg", ".flac"]
+    MAX_SIZE_MB = 25
+    
+    suffix = Path(filename).suffix.lower()
+    if suffix not in SUPPORTED_FORMATS:
+        return False, f"Unsupported format: {suffix}. Supported: {SUPPORTED_FORMATS}"
+    
+    size_mb = len(audio_bytes) / (1024 * 1024)
+    if size_mb > MAX_SIZE_MB:
+        return False, f"File too large: {size_mb:.1f}MB. Max: {MAX_SIZE_MB}MB"
+    
+    return True, "Valid"
+
+
+def validate_image_file(image_bytes: bytes, filename: str) -> Tuple[bool, str]:
+    """Validate image file format and size."""
+    SUPPORTED_FORMATS = [".png", ".jpg", ".jpeg", ".webp", ".gif"]
+    MAX_SIZE_MB = 20
+    
+    suffix = Path(filename).suffix.lower()
+    if suffix not in SUPPORTED_FORMATS:
+        return False, f"Unsupported format: {suffix}. Supported: {SUPPORTED_FORMATS}"
+    
+    size_mb = len(image_bytes) / (1024 * 1024)
+    if size_mb > MAX_SIZE_MB:
+        return False, f"File too large: {size_mb:.1f}MB. Max: {MAX_SIZE_MB}MB"
+    
+    return True, "Valid"
+
+
+def estimate_multimodal_cost(
+    has_voice: bool = False,
+    voice_duration_seconds: float = 60,
+    has_image: bool = False
+) -> Dict[str, float]:
+    """
+    Estimate preprocessing costs before processing.
+    
+    Returns:
+        Dict with voice_cost, image_cost, total_cost (all in USD)
+    """
+    voice_cost = 0.0
+    if has_voice:
+        voice_cost = (voice_duration_seconds / 60.0) * MULTIMODAL_PRICING["voice_transcription_per_minute"]
+    
+    image_cost = MULTIMODAL_PRICING["image_analysis"] if has_image else 0.0
+    
+    return {
+        "voice_cost": voice_cost,
+        "image_cost": image_cost,
+        "total_cost": voice_cost + image_cost
+    }
