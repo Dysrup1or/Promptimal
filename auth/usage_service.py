@@ -20,16 +20,20 @@ from consensus_prompt_optimizer.config import (
     FREE_TIER_MONTHLY_LIMIT,
     PRO_TIER_MONTHLY_LIMIT,
     ENTERPRISE_TIER_LIMIT,
+    FLOW_TIER_MONTHLY_LIMIT,
+    SYNAPSE_TIER_MONTHLY_LIMIT,
 )
 
 
 class UsageService:
-    """Service for usage tracking operations."""
+    """Service for Catalyze Credit (CC) usage tracking."""
     
-    # Tier limits mapping
+    # Tier limits mapping (Flow=40, Synapse=300, Enterprise=unlimited)
     TIER_LIMITS = {
-        "free": FREE_TIER_MONTHLY_LIMIT,      # 100
-        "pro": PRO_TIER_MONTHLY_LIMIT,         # 500
+        "free": FLOW_TIER_MONTHLY_LIMIT,       # 40 CCs (Flow tier)
+        "flow": FLOW_TIER_MONTHLY_LIMIT,       # Alias
+        "pro": SYNAPSE_TIER_MONTHLY_LIMIT,     # 300 CCs (Synapse tier)
+        "synapse": SYNAPSE_TIER_MONTHLY_LIMIT, # Alias
         "enterprise": ENTERPRISE_TIER_LIMIT,   # None (unlimited)
     }
     

@@ -59,16 +59,22 @@ EXPANDER_TOKEN_LIMIT = 350  # Legacy v1 limit (not used in v2)
 GROQ_TOKEN_CAP = 4000       # Output limit for Expander stage
 
 # ============================================================================
-# RATE LIMITING & COST CONTROLS (Production Safety)
+# RATE LIMITING & TIERS (Sustainable SaaS Model)
 # ============================================================================
-# Free tier limits - reduced after Groq migration (cost efficiency)
-FREE_TIER_MONTHLY_LIMIT = 50    # Max requests per user per month (reduced from 100)
-COST_PER_REQUEST_AVG = 0.0012   # Average cost per optimization (~$0.0012)
-MAX_MONTHLY_COST_FREE_USER = FREE_TIER_MONTHLY_LIMIT * COST_PER_REQUEST_AVG  # ~$0.06
+# Flow (Free) tier - 40 Catalyze Credits (CCs) per month
+FLOW_TIER_MONTHLY_LIMIT = 40       # Free tier: 40 CCs/month
+FREE_TIER_MONTHLY_LIMIT = 40       # Alias for backward compatibility
 
-# Paid tier limits (for future implementation)
-PRO_TIER_MONTHLY_LIMIT = 500    # Pro users get 500/month
-ENTERPRISE_TIER_LIMIT = None    # Unlimited for enterprise
+# Synapse (Pro) tier - $19.99/month, 300 CCs
+SYNAPSE_TIER_MONTHLY_LIMIT = 300   # Pro tier: 300 CCs/month
+PRO_TIER_MONTHLY_LIMIT = 300       # Alias for backward compatibility
+
+# Enterprise tier - unlimited
+ENTERPRISE_TIER_LIMIT = None       # Unlimited for enterprise
+
+# Cost metrics
+COST_PER_REQUEST_AVG = 0.01375     # Average COGS per CC (~$0.01375)
+OVERAGE_PRICE_PER_CC = 0.08        # Pay-as-you-go overage rate ($0.08/CC)
 
 # ============================================================================
 # API KEYS

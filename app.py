@@ -598,7 +598,7 @@ def show_auth_page():
                         st.rerun()
             
             st.markdown("---")
-            st.markdown('<p style="color: #8b949e; font-size: 0.85rem; text-align: center;">· Free tier includes 50 optimizations/month</p>', unsafe_allow_html=True)
+            st.markdown('<p style="color: #8b949e; font-size: 0.85rem; text-align: center;">· Flow tier includes 40 Catalyze Credits/month</p>', unsafe_allow_html=True)
     
     # Footer
     st.markdown("""
@@ -658,11 +658,11 @@ with st.sidebar:
     # Upgrade/Manage Subscription button
     if current_user.tier == "free":
         if stripe_service.is_configured:
-            if st.button("⚡ Upgrade to Pro", use_container_width=True, type="primary"):
+            if st.button("⚡ Upgrade to Synapse", use_container_width=True, type="primary"):
                 st.session_state.show_upgrade = True
                 st.rerun()
         else:
-            if st.button("🚀 Pro - Coming Soon", use_container_width=True):
+            if st.button("🚀 Synapse - Coming Soon", use_container_width=True):
                 st.session_state.show_upgrade = True
                 st.rerun()
     elif current_user.is_pro and stripe_service.is_configured:
@@ -746,9 +746,9 @@ if run_button and idea:
         is_within_limit, current_count, limit = usage_service.check_limit(current_user.id, current_user.tier)
         
         if not is_within_limit:
-            st.error(f"Monthly usage limit reached ({current_count}/{limit} requests). Resets on the 1st of next month.")
+            st.error(f"Monthly limit reached ({current_count}/{limit} CCs). Resets on the 1st of next month.")
             if current_user.tier == "free":
-                btn_text = "⚡ Upgrade to Pro for 500 requests/month" if stripe_service.is_configured else "🚀 Pro Coming Soon - Join Waitlist"
+                btn_text = "⚡ Upgrade to Synapse for 300 CCs/month" if stripe_service.is_configured else "🚀 Synapse Coming Soon - Join Waitlist"
                 if st.button(btn_text):
                     st.session_state.show_upgrade = True
                     st.rerun()
@@ -921,22 +921,22 @@ if 'last_result' in st.session_state:
 # ============================================================================
 # UPGRADE MODAL (Stripe Integration)
 # ============================================================================
-@st.dialog("Catalyze Pro" if stripe_service.is_configured else "Catalyze Pro - Coming Soon")
+@st.dialog("Upgrade to Synapse" if stripe_service.is_configured else "Synapse Tier - Coming Soon")
 def show_upgrade_dialog():
     if stripe_service.is_configured:
         st.markdown("""
-        ### Unlock More Power
+        ### Unlock Full Power
         
-        **Catalyze Pro** gives you:
+        **Synapse** (Pro Tier) gives you:
         
-        → **500 optimizations/month** (vs 50 free)  
+        → **300 Catalyze Credits/month** (vs 40 Flow)  
+        → A/B Strategy Output (2/3 depth)  
+        → Direct link to **The Tribunal** for verification  
         → Priority processing  
-        → Advanced analytics  
-        → Email support  
         
         ---
         
-        ### $9.99/month
+        ### $19.99/month
         
         """)
         
@@ -944,7 +944,7 @@ def show_upgrade_dialog():
         subscription = stripe_service.get_active_subscription(current_user.id)
         
         if subscription and subscription.get("status") == "active":
-            st.success("✅ You already have an active Pro subscription!")
+            st.success("✅ You already have an active Synapse subscription!")
             
             # Show manage subscription button
             if st.button("📋 Manage Subscription", use_container_width=True, type="primary"):
@@ -979,21 +979,21 @@ def show_upgrade_dialog():
     else:
         # Stripe not configured - show Coming Soon with waitlist
         st.markdown("""
-        ### 🚀 Pro Tier Launching Soon!
+        ### 🚀 Synapse Tier Launching Soon!
         
-        **Catalyze Pro** will include:
+        **Synapse** (Pro) will include:
         
-        → **500 transformations/month** (vs 50 free)  
+        → **300 Catalyze Credits/month** (vs 40 Flow)  
+        → A/B Strategy Output (2/3 depth)  
+        → Direct link to **The Tribunal** for verification  
         → Priority processing  
-        → Advanced analytics  
-        → Email support  
         
         ---
         
-        ### $9.99/month
+        ### $19.99/month
         
         We're putting the finishing touches on our payment system.
-        Join the waitlist to be notified when Pro launches!
+        Join the waitlist to be notified when Synapse launches!
         """)
         
         st.markdown("#### 📧 Get Notified")
@@ -1011,7 +1011,7 @@ def show_upgrade_dialog():
 # Handle upgrade success/cancel from URL params
 query_params = st.query_params
 if query_params.get("upgrade") == "success":
-    st.success("🎉 Welcome to Catalyze Pro! Your account has been upgraded.")
+    st.success("🎉 Welcome to Synapse! Your account has been upgraded.")
     # Refresh user from database to get updated tier
     updated_user = auth_service.get_user_by_id(current_user.id)
     if updated_user:

@@ -31,6 +31,7 @@ from .schemas import (
     RankingsOutput,
     RankerVariant,
     SynthesizerOutput,
+    SuccessSpec,
     validate_stage_output
 )
 from .llm_wrapper_v2 import (
@@ -803,7 +804,11 @@ CRITICAL RULES:
         rankings: RankingsOutput,
         final: SynthesizerOutput
     ) -> Dict[str, Any]:
-        """Build complete output JSON."""
+        """Build complete output JSON with Success Spec for Intent Preservation."""
+        
+        # Generate Success Spec for The Tribunal integration
+        success_spec = self._generate_success_spec(idea, discern, rubric, final)
+        
         return {
             "version": "v2",
             "timestamp": datetime.now().isoformat(),
@@ -843,8 +848,43 @@ CRITICAL RULES:
                 "rubric_compliance": final.rubric_compliance,
                 "confidence": final.confidence
             },
+            # Intent Preservation: Success Spec for The Tribunal
+            "success_spec": success_spec.model_dump(),
             "usage": self.tracker.summary()
         }
+    
+    def _generate_success_spec(
+        self,
+        idea: str,
+        discern: DiscernOutput,
+        rubric: RubricOutput,
+        final: SynthesizerOutput
+    ) -> SuccessSpec:
+        """
+        Generate Success Specification for Intent Preservation.
+        
+        This artifact is passed to The Tribunal for downstream verification,
+        ensuring the original user intent is preserved through the optimization.
+        """
+        # Build intent summary from discern analysis
+        intent_summary = f"{discern.task_type.capitalize()} task in {discern.domain} domain: {idea[:150]}"
+        
+        # Extract key constraints from rubric and discern
+        key_constraints = []
+        key_constraints.extend(discern.key_requirements[:3])
+        key_constraints.extend([f"Avoid: {pitfall}" for pitfall in discern.potential_pitfalls[:2]])
+        key_constraints.extend(rubric.red_flags[:2])
+        
+        # Build expected behavior from rubric compliance
+        compliance_items = list(final.rubric_compliance.keys())[:3]
+        expected_behavior = f"The optimized prompt should produce outputs that satisfy: {', '.join(compliance_items)}. " \
+                           f"Confidence: {final.confidence:.0%}."
+        
+        return SuccessSpec(
+            intent_summary=intent_summary,
+            key_constraints=key_constraints[:5],  # Cap at 5 constraints
+            expected_behavior=expected_behavior
+        )
 
 
 # ============================================================================

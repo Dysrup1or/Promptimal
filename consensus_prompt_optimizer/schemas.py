@@ -112,6 +112,36 @@ class SynthesizerOutput(BaseModel):
 
 
 # ============================================================================
+# SUCCESS SPEC - INTENT PRESERVATION (The Tribunal Integration)
+# ============================================================================
+class SuccessSpec(BaseModel):
+    """
+    Success Specification for Intent Preservation.
+    This artifact is passed to The Tribunal for verification.
+    
+    Generated alongside the optimized prompt to ensure the original
+    intent is preserved and can be validated downstream.
+    """
+    intent_summary: str = Field(
+        description="Concise summary of the user's original intent (1-2 sentences)"
+    )
+    key_constraints: List[str] = Field(
+        default_factory=list,
+        description="Critical constraints that must be satisfied by any output"
+    )
+    expected_behavior: str = Field(
+        description="Description of what successful prompt execution looks like"
+    )
+    
+    @field_validator('intent_summary', 'expected_behavior')
+    @classmethod
+    def not_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Field cannot be empty")
+        return v.strip()
+
+
+# ============================================================================
 # COMPLETE RUN METADATA (Optional, for full run tracking)
 # ============================================================================
 class MetaInfo(BaseModel):

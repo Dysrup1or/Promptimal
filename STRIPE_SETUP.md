@@ -2,7 +2,7 @@
 
 ## Overview
 
-Catalyze now supports Stripe subscription billing for Pro tier upgrades ($9.99/month).
+Catalyze now supports Stripe subscription billing for Synapse tier upgrades ($19.99/month).
 
 ## ⚠️ IMPORTANT: Webhook Deployment
 
@@ -44,11 +44,11 @@ APP_URL=https://your-app.railway.app   # Your production URL
 1. Go to [Stripe Dashboard](https://dashboard.stripe.com) → Products
 2. Click **+ Add Product**
 3. Fill in:
-   - **Name:** Catalyze Pro
-   - **Description:** 500 prompt transformations/month, priority processing
+   - **Name:** Catalyze Synapse
+   - **Description:** 300 Catalyze Credits/month, A/B Strategy, The Tribunal link
 4. Under Pricing:
    - Select **Recurring**
-   - Price: `$9.99`
+   - Price: `$19.99`
    - Billing period: **Monthly**
 5. Click **Save product**
 6. Copy the **Price ID** (starts with `price_`) → Set as `STRIPE_PRO_PRICE_ID`
@@ -144,11 +144,11 @@ Two new tables are created automatically:
 
 ## Tier Limits
 
-| Tier | Monthly Limit | Cost |
-|------|---------------|------|
-| Free | 50 requests | $0 |
-| Pro | 500 requests | $9.99/month |
-| Enterprise | Unlimited | Contact sales |
+| Tier | Monthly CCs | Price | Features |
+|------|-------------|-------|----------|
+| Flow (Free) | 40 CCs | $0 | Single Best Prompt (1/3) |
+| Synapse (Pro) | 300 CCs | $19.99/month | A/B Strategy (2/3), The Tribunal link |
+| Enterprise | Unlimited | Contact sales | Custom integration |
 
 ## Troubleshooting
 
