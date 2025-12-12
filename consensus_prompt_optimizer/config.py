@@ -95,3 +95,18 @@ TELEMETRY_ENABLED = bool(LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY)
 # ============================================================================
 DEFAULT_SEED = 42
 DEFAULT_TEMPERATURE = 0.7
+
+# ============================================================================
+# MULTIMODAL MODELS
+# ============================================================================
+OPENAI_TRANSCRIBE = "gpt-4o-mini-transcribe"  # Fast, cheap voice transcription
+GEMINI_VISION = "gemini-2.0-flash"  # Free image understanding (same as GEMINI_FAST)
+
+# Multimodal pricing (per request estimates)
+MULTIMODAL_PRICING = {
+    "voice_transcription_per_minute": 0.003,  # ~$0.003/min for gpt-4o-mini-transcribe
+    "image_analysis": 0.00,  # Gemini free tier
+}
+
+# Credit multiplier for multimodal requests
+MULTIMODAL_CREDIT_COST = 2  # Charge 2 CCs instead of 1 for voice/image input
