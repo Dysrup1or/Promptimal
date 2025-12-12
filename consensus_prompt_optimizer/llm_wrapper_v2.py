@@ -33,6 +33,7 @@ COST_PER_1M = {
     GROQ_EXPAND: {"input": 0.59, "output": 0.79},  # Llama 3.3 70B
     "groq/llama-3.3-70b-versatile": {"input": 0.59, "output": 0.79},
     "groq/llama-3.1-8b-instant": {"input": 0.05, "output": 0.08},
+    "deepseek/deepseek-chat": {"input": 0.14, "output": 0.28},
 }
 
 # Cache directory
