@@ -202,10 +202,12 @@ st.markdown("""
         box-shadow: 0 0 20px rgba(0, 240, 255, 0.2) !important;
     }
     
-    /* Primary button with cyan - LARGE */
-    .stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #00F0FF 0%, #00d4e6 100%) !important;
-        color: #000000 !important;
+    /* Primary button - Lime Green for positive actions */
+    .stButton > button[kind="primary"],
+    .stFormSubmitButton > button[kind="primary"],
+    [data-testid="stFormSubmitButton"] > button {
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+        color: #ffffff !important;
         border: none !important;
         border-radius: 8px !important;
         padding: 14px 28px !important;
@@ -213,13 +215,15 @@ st.markdown("""
         font-size: 0.95rem !important;
         font-family: 'Inter', sans-serif !important;
         transition: all 0.3s ease !important;
-        box-shadow: 0 4px 20px rgba(0, 240, 255, 0.3) !important;
+        box-shadow: 0 4px 20px rgba(34, 197, 94, 0.3) !important;
         letter-spacing: 0.5px !important;
     }
     
-    .stButton > button[kind="primary"]:hover {
-        background: linear-gradient(135deg, #00d4e6 0%, #00F0FF 100%) !important;
-        box-shadow: 0 6px 30px rgba(0, 240, 255, 0.5) !important;
+    .stButton > button[kind="primary"]:hover,
+    .stFormSubmitButton > button[kind="primary"]:hover,
+    [data-testid="stFormSubmitButton"] > button:hover {
+        background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%) !important;
+        box-shadow: 0 6px 30px rgba(34, 197, 94, 0.5) !important;
         transform: translateY(-2px) !important;
     }
     
@@ -734,33 +738,38 @@ def show_auth_page():
     left_col, right_col = st.columns([1.2, 0.8], gap="small")
     
     with left_col:
-        # Use st.html() for proper HTML rendering (not st.markdown)
-        hero_url = "https://raw.githubusercontent.com/Dysrup1or/Promptimal/main/assets/hero_robots.png"
-        
-        st.html(f'''
+        # Use st.html() for text content, st.image() for the image
+        st.html('''
         <div class="landing-left-col">
             <h1 class="landing-logo">CATALYZE</h1>
             <p class="landing-tagline">Transform your ideas into bulletproof prompts</p>
-            
-            <img src="{hero_url}" class="landing-hero" alt="AI Prompt Optimization" onerror="this.style.display='none'">
-            
-            <div class="landing-features">
-                <div class="landing-feature">
-                    <span style="color: #00F0FF;">&#9670;</span>
-                    <span>5-stage AI pipeline with Judge-then-Generate</span>
-                </div>
-                <div class="landing-feature">
-                    <span style="color: #a855f7;">&#9670;</span>
-                    <span>Success Spec ensures intent preservation</span>
-                </div>
-                <div class="landing-feature">
-                    <span style="color: #00F0FF;">&#9670;</span>
-                    <span>~$0.02 per optimization with full transparency</span>
-                </div>
-                <div class="landing-feature">
-                    <span style="color: #a855f7;">&#9670;</span>
-                    <span>40 free credits monthly on Flow tier</span>
-                </div>
+        </div>
+        ''')
+        
+        # Hero image using native Streamlit (works with local files)
+        try:
+            st.image("assets/hero_robots.png", use_container_width=True)
+        except:
+            pass  # Silently fail if image not found
+        
+        # Features list
+        st.html('''
+        <div class="landing-features">
+            <div class="landing-feature">
+                <span style="color: #00F0FF;">&#9670;</span>
+                <span>5-stage AI pipeline with Judge-then-Generate</span>
+            </div>
+            <div class="landing-feature">
+                <span style="color: #a855f7;">&#9670;</span>
+                <span>Success Spec ensures intent preservation</span>
+            </div>
+            <div class="landing-feature">
+                <span style="color: #00F0FF;">&#9670;</span>
+                <span>~$0.02 per optimization with full transparency</span>
+            </div>
+            <div class="landing-feature">
+                <span style="color: #a855f7;">&#9670;</span>
+                <span>40 free credits monthly on Flow tier</span>
             </div>
         </div>
         ''')
