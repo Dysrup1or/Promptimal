@@ -284,6 +284,75 @@ class PromptimaV2:
         
         return result
     
+    async def run_multimodal(
+        self,
+        text_input: str = "",
+        audio_bytes: Optional[bytes] = None,
+        audio_filename: str = "audio.webm",
+        image_bytes: Optional[bytes] = None,
+        image_filename: str = "image.png"
+    ) -> Dict[str, Any]:
+        """
+        Run the full v2 pipeline with multimodal input support.
+        
+        Preprocesses voice/image inputs, combines them with text,
+        then runs the standard optimization pipeline.
+        
+        Args:
+            text_input: Direct text input from user
+            audio_bytes: Optional voice recording bytes
+            audio_filename: Voice file name with extension
+            image_bytes: Optional image bytes
+            image_filename: Image file name with extension
+        
+        Returns:
+            Complete output JSON with all stages + multimodal metadata
+        """
+        from .multimodal_preprocessor import preprocess_multimodal_input
+        
+        log_event("pipeline.multimodal.start", {
+            "has_text": bool(text_input),
+            "has_audio": bool(audio_bytes),
+            "has_image": bool(image_bytes)
+        })
+        
+        # Preprocess multimodal inputs
+        preprocessed = await preprocess_multimodal_input(
+            text_input=text_input,
+            audio_bytes=audio_bytes,
+            audio_filename=audio_filename,
+            image_bytes=image_bytes,
+            image_filename=image_filename
+        )
+        
+        if not preprocessed["combined_prompt"]:
+            return {
+                "error": "No valid input provided",
+                "errors": preprocessed.get("errors", []),
+                "success": False
+            }
+        
+        # Run standard pipeline with combined prompt
+        result = self.run(preprocessed["combined_prompt"])
+        
+        # Add multimodal metadata to result
+        result["multimodal"] = {
+            "sources": preprocessed["sources"],
+            "is_multimodal": preprocessed["is_multimodal"],
+            "credit_cost": preprocessed["credit_cost"],
+            "preprocessing_cost_usd": preprocessed["total_preprocessing_cost"],
+            "voice_transcription": preprocessed.get("voice_result", {}).get("text", None) if preprocessed.get("voice_result") else None,
+            "image_context": preprocessed.get("image_result", {}).get("description", None)[:500] if preprocessed.get("image_result") and preprocessed.get("image_result", {}).get("description") else None,
+            "errors": preprocessed.get("errors", [])
+        }
+        
+        log_event("pipeline.multimodal.complete", {
+            "sources": preprocessed["sources"],
+            "credit_cost": preprocessed["credit_cost"]
+        })
+        
+        return result
+
     def _run_discerner(self, idea: str) -> DiscernOutput:
         """Stage 1: Analyze the idea."""
         log_event("stage.discerner.start", {})
