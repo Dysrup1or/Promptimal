@@ -1282,7 +1282,8 @@ if run_button and (idea or st.session_state.get('audio_input') or st.session_sta
         is_within_limit, current_count, limit = usage_service.check_limit(current_user.id, current_user.tier)
         
         # Also check if we have enough credits for this operation
-        if current_count + credit_cost > limit:
+        # Note: limit is None for unlimited tiers (admin, enterprise)
+        if limit is not None and current_count + credit_cost > limit:
             is_within_limit = False
         
         if not is_within_limit:
