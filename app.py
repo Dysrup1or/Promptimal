@@ -10,6 +10,7 @@ Run with: streamlit run app.py
 import os
 import json
 import time
+import asyncio
 import streamlit as st
 from pathlib import Path
 from datetime import datetime
@@ -21,6 +22,16 @@ load_dotenv()
 # Import the v2 pipeline
 from consensus_prompt_optimizer.orchestrator import PromptimaV2
 from consensus_prompt_optimizer.config import FREE_TIER_MONTHLY_LIMIT, PRO_TIER_MONTHLY_LIMIT
+
+# Import multimodal preprocessor
+from consensus_prompt_optimizer.multimodal_preprocessor import (
+    check_multimodal_availability,
+    preprocess_multimodal_input,
+    validate_audio_file,
+    validate_image_file,
+    estimate_multimodal_cost,
+)
+from consensus_prompt_optimizer.config import MULTIMODAL_CREDIT_COST
 
 # Import authentication and Stripe
 from auth import AuthService, UsageService, get_stripe_service
@@ -618,6 +629,189 @@ st.markdown("""
         letter-spacing: 1px;
         margin-bottom: 20px;
     }
+    
+    /* ============================================
+       MULTIMODAL INPUT STYLES
+       ============================================ */
+    
+    /* Multimodal expander container */
+    .multimodal-expander {
+        margin-top: 16px;
+        margin-bottom: 16px;
+    }
+    
+    .multimodal-expander .streamlit-expanderHeader {
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(0, 240, 255, 0.1) 100%);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        border-radius: 12px;
+        color: #22c55e;
+        font-weight: 600;
+    }
+    
+    .multimodal-expander .streamlit-expanderHeader:hover {
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(0, 240, 255, 0.15) 100%);
+        border-color: #22c55e;
+    }
+    
+    .multimodal-expander .streamlit-expanderContent {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-top: none;
+        border-radius: 0 0 12px 12px;
+        padding: 20px;
+    }
+    
+    /* Audio input styling */
+    .stAudioInput {
+        background: rgba(30, 41, 59, 0.5);
+        border: 2px dashed rgba(34, 197, 94, 0.3);
+        border-radius: 12px;
+        padding: 16px;
+        transition: all 0.3s ease;
+    }
+    
+    .stAudioInput:hover {
+        border-color: #22c55e;
+        background: rgba(34, 197, 94, 0.05);
+    }
+    
+    .stAudioInput > label {
+        color: #22c55e !important;
+        font-weight: 600 !important;
+        font-size: 0.95rem !important;
+    }
+    
+    /* File uploader styling for images */
+    .stFileUploader {
+        background: rgba(30, 41, 59, 0.5);
+        border: 2px dashed rgba(0, 240, 255, 0.3);
+        border-radius: 12px;
+        padding: 16px;
+        transition: all 0.3s ease;
+    }
+    
+    .stFileUploader:hover {
+        border-color: #00F0FF;
+        background: rgba(0, 240, 255, 0.05);
+    }
+    
+    .stFileUploader > label {
+        color: #00F0FF !important;
+        font-weight: 600 !important;
+        font-size: 0.95rem !important;
+    }
+    
+    /* Drag and drop zone */
+    [data-testid="stFileUploadDropzone"] {
+        background: rgba(15, 23, 42, 0.4) !important;
+        border: 2px dashed rgba(0, 240, 255, 0.3) !important;
+        border-radius: 12px !important;
+    }
+    
+    [data-testid="stFileUploadDropzone"]:hover {
+        border-color: #00F0FF !important;
+        background: rgba(0, 240, 255, 0.05) !important;
+    }
+    
+    /* Multimodal status indicator */
+    .multimodal-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .multimodal-status-active {
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(0, 240, 255, 0.2) 100%);
+        color: #22c55e;
+        border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+    
+    .multimodal-status-text-only {
+        background: rgba(100, 116, 139, 0.2);
+        color: #94a3b8;
+        border: 1px solid rgba(100, 116, 139, 0.3);
+    }
+    
+    /* Multimodal input preview cards */
+    .multimodal-preview {
+        background: rgba(30, 41, 59, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 12px;
+        margin-top: 8px;
+    }
+    
+    .multimodal-preview-title {
+        color: #22c55e;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    
+    /* Credit cost indicator */
+    .credit-cost-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .credit-cost-standard {
+        background: rgba(34, 197, 94, 0.2);
+        color: #22c55e;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    
+    .credit-cost-multimodal {
+        background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(0, 240, 255, 0.2) 100%);
+        color: #a855f7;
+        border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+    
+    /* Image preview styling */
+    .multimodal-image-preview {
+        max-width: 200px;
+        max-height: 150px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        object-fit: cover;
+    }
+    
+    /* Audio player styling */
+    .stAudio > audio {
+        width: 100% !important;
+        border-radius: 8px;
+    }
+    
+    /* Processing status for multimodal */
+    .multimodal-processing {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        border-radius: 8px;
+        margin: 12px 0;
+    }
+    
+    .multimodal-processing-icon {
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -944,11 +1138,93 @@ with col_center:
         label_visibility="collapsed"
     )
     
+    # ========================================================================
+    # MULTIMODAL INPUT SECTION
+    # ========================================================================
+    
+    # Check if multimodal is available
+    multimodal_available = check_multimodal_availability()
+    voice_available = multimodal_available.get("voice", False)
+    image_available = multimodal_available.get("image", False)
+    any_multimodal = voice_available or image_available
+    
+    # Initialize multimodal session state
+    if 'audio_input' not in st.session_state:
+        st.session_state.audio_input = None
+    if 'image_input' not in st.session_state:
+        st.session_state.image_input = None
+    
+    # Only show multimodal section if at least one is available
+    if any_multimodal:
+        with st.expander("🎤 Voice & 📷 Image Input (Optional) — *Uses 2 credits*", expanded=False):
+            st.markdown("""
+            <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 16px;">
+                Add voice recordings or images to enhance your prompt. Your inputs will be analyzed and combined with any text you've entered above.
+            </p>
+            """, unsafe_allow_html=True)
+            
+            col_voice, col_image = st.columns(2)
+            
+            with col_voice:
+                if voice_available:
+                    st.markdown("##### 🎤 Voice Recording")
+                    audio_bytes = st.audio_input(
+                        "Record your prompt idea",
+                        key="voice_recorder",
+                        help="Click to record, click again to stop. Your voice will be transcribed automatically."
+                    )
+                    if audio_bytes:
+                        st.session_state.audio_input = audio_bytes
+                        st.success("✓ Voice recorded")
+                        st.audio(audio_bytes, format="audio/wav")
+                else:
+                    st.markdown("##### 🎤 Voice Recording")
+                    st.info("Voice input requires OpenAI API key")
+            
+            with col_image:
+                if image_available:
+                    st.markdown("##### 📷 Image Upload")
+                    uploaded_image = st.file_uploader(
+                        "Upload an image for context",
+                        type=["png", "jpg", "jpeg", "webp", "gif"],
+                        key="image_uploader",
+                        help="Upload an image to analyze. Supports PNG, JPG, WebP, and GIF formats."
+                    )
+                    if uploaded_image:
+                        st.session_state.image_input = uploaded_image
+                        st.success(f"✓ Image uploaded: {uploaded_image.name}")
+                        st.image(uploaded_image, width=200)
+                else:
+                    st.markdown("##### 📷 Image Upload")
+                    st.info("Image analysis requires Gemini API key")
+            
+            # Show current cost indicator
+            has_multimodal = st.session_state.audio_input or st.session_state.image_input
+            if has_multimodal:
+                st.markdown(f"""
+                <div style="margin-top: 16px; padding: 12px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 8px;">
+                    <span style="color: #a855f7; font-weight: 600;">💎 Multimodal Mode Active</span>
+                    <span style="color: #94a3b8; font-size: 0.85rem;"> — This optimization will use <strong>{MULTIMODAL_CREDIT_COST} credits</strong></span>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # Clear button
+            if has_multimodal:
+                if st.button("🗑️ Clear Multimodal Inputs", type="secondary"):
+                    st.session_state.audio_input = None
+                    st.session_state.image_input = None
+                    st.rerun()
+    
     st.markdown("")
+    
+    # Show credit cost based on multimodal state
+    has_multimodal_inputs = st.session_state.get('audio_input') or st.session_state.get('image_input')
+    credit_cost = MULTIMODAL_CREDIT_COST if has_multimodal_inputs else 1
+    credit_label = "2 credits" if has_multimodal_inputs else "1 credit"
     
     # Optimize button - centered
     run_button = st.button(
-        "OPTIMIZE →", 
+        f"OPTIMIZE → ({credit_label})", 
         type="primary", 
         use_container_width=True
     )
@@ -961,12 +1237,31 @@ st.markdown("")
 # ============================================================================
 # PROCESSING & RESULTS
 # ============================================================================
-if run_button and idea:
+
+# Helper function to run async code in Streamlit
+def run_async(coro):
+    """Run async coroutine in sync context for Streamlit."""
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    return loop.run_until_complete(coro)
+
+if run_button and (idea or st.session_state.get('audio_input') or st.session_state.get('image_input')):
     if not os.getenv("GEMINI_API_KEY") or not os.getenv("DEEPSEEK_API_KEY"):
         st.error("Please configure API keys in environment variables")
     else:
-        # Check rate limit from database
+        # Determine credit cost based on multimodal inputs
+        has_multimodal_inputs = st.session_state.get('audio_input') or st.session_state.get('image_input')
+        credit_cost = MULTIMODAL_CREDIT_COST if has_multimodal_inputs else 1
+        
+        # Check rate limit from database (with credit cost)
         is_within_limit, current_count, limit = usage_service.check_limit(current_user.id, current_user.tier)
+        
+        # Also check if we have enough credits for this operation
+        if current_count + credit_cost > limit:
+            is_within_limit = False
         
         if not is_within_limit:
             st.error(f"Monthly limit reached ({current_count}/{limit} CCs). Resets on the 1st of next month.")
@@ -976,15 +1271,65 @@ if run_button and idea:
                     st.session_state.show_upgrade = True
                     st.rerun()
         else:
-            with st.spinner("Optimizing your prompt... (this takes 10-30 seconds)"):
+            # Determine spinner message based on input type
+            if has_multimodal_inputs:
+                spinner_msg = "Processing multimodal inputs and optimizing your prompt... (this takes 15-45 seconds)"
+            else:
+                spinner_msg = "Optimizing your prompt... (this takes 10-30 seconds)"
+            
+            with st.spinner(spinner_msg):
                 try:
                     start_time = time.time()
                     
-                    # Enhance idea with context tags
-                    enhanced_idea = idea
-                    if context_tags:
-                        enhanced_idea = f"{idea}\n\nContext variables to include: {', '.join(context_tags)}"
+                    # Get multimodal inputs
+                    audio_data = st.session_state.get('audio_input')
+                    image_data = st.session_state.get('image_input')
                     
+                    # Preprocess multimodal inputs if present
+                    if has_multimodal_inputs:
+                        st.info("🔄 Preprocessing multimodal inputs...")
+                        
+                        # Convert audio/image to bytes format if present
+                        audio_bytes_data = audio_data.getvalue() if audio_data else None
+                        image_bytes_data = image_data.getvalue() if image_data else None
+                        
+                        # Call multimodal preprocessor (async)
+                        preprocessed = run_async(preprocess_multimodal_input(
+                            text_input=idea if idea else "",
+                            audio_bytes=audio_bytes_data,
+                            image_bytes=image_bytes_data
+                        ))
+                        
+                        # Get the combined prompt from preprocessing
+                        enhanced_idea = preprocessed.get("combined_prompt", idea)
+                        
+                        # Show what was processed
+                        voice_result = preprocessed.get("voice_result")
+                        if voice_result and voice_result.get("success"):
+                            transcribed_text = voice_result.get("text", "")
+                            if transcribed_text:
+                                display_text = transcribed_text[:100] + "..." if len(transcribed_text) > 100 else transcribed_text
+                                st.success(f"🎤 Voice transcribed: \"{display_text}\"")
+                        
+                        image_result = preprocessed.get("image_result")
+                        if image_result and image_result.get("success"):
+                            analysis_text = image_result.get("description", "")
+                            if analysis_text:
+                                display_text = analysis_text[:100] + "..." if len(analysis_text) > 100 else analysis_text
+                                st.success(f"📷 Image analyzed: \"{display_text}\"")
+                        
+                        # Show any errors from preprocessing
+                        preprocess_errors = preprocessed.get("errors", [])
+                        for error in preprocess_errors:
+                            st.warning(f"⚠️ {error}")
+                    else:
+                        enhanced_idea = idea
+                    
+                    # Add context tags if present
+                    if context_tags:
+                        enhanced_idea = f"{enhanced_idea}\n\nContext variables to include: {', '.join(context_tags)}"
+                    
+                    # Run the optimizer
                     optimizer = PromptimaV2(use_cache=use_cache, dry_run=dry_run)
                     result = optimizer.run(enhanced_idea)
                     
@@ -995,9 +1340,18 @@ if run_button and idea:
                     st.session_state['last_result'] = result
                     st.session_state['last_idea'] = idea
                     st.session_state['last_latency'] = latency
+                    st.session_state['last_was_multimodal'] = has_multimodal_inputs
                     
-                    # Increment usage counter in database
-                    usage_service.increment_usage(current_user.id)
+                    # Increment usage counter in database (with correct credit cost)
+                    if credit_cost > 1:
+                        usage_service.increment_usage_by(current_user.id, credit_cost)
+                    else:
+                        usage_service.increment_usage(current_user.id)
+                    
+                    # Clear multimodal inputs after successful processing
+                    if has_multimodal_inputs:
+                        st.session_state.audio_input = None
+                        st.session_state.image_input = None
                     
                     # Add to history
                     st.session_state.history.append({
@@ -1010,8 +1364,8 @@ if run_button and idea:
                     st.error(f"Error: {str(e)}")
                     st.exception(e)
 
-elif run_button and not idea:
-    st.warning("Please enter a prompt idea first")
+elif run_button and not idea and not st.session_state.get('audio_input') and not st.session_state.get('image_input'):
+    st.warning("Please enter a prompt idea, record a voice message, or upload an image first")
 
 
 # ============================================================================
