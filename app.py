@@ -26,7 +26,23 @@ from consensus_prompt_optimizer.config import FREE_TIER_MONTHLY_LIMIT, PRO_TIER_
 from auth import AuthService, UsageService, get_stripe_service
 
 # Get base URL for redirects
-APP_URL = os.getenv("APP_URL", "http://localhost:8501")
+# Railway provides RAILWAY_PUBLIC_DOMAIN automatically
+def get_app_url():
+    """Get the app URL, auto-detecting Railway deployment."""
+    if os.getenv("APP_URL"):
+        url = os.getenv("APP_URL")
+    elif os.getenv("RAILWAY_PUBLIC_DOMAIN"):
+        url = f"https://{os.getenv('RAILWAY_PUBLIC_DOMAIN')}"
+    else:
+        url = "http://localhost:8501"
+    
+    # Ensure URL has a scheme
+    if not url.startswith("http://") and not url.startswith("https://"):
+        url = f"https://{url}"
+    
+    return url.rstrip("/")
+
+APP_URL = get_app_url()
 
 
 # ============================================================================
