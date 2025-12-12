@@ -50,7 +50,7 @@ APP_URL = get_app_url()
 # ============================================================================
 st.set_page_config(
     page_title="Catalyze - Transform Ideas into Prompts",
-    page_icon="⚗️",
+    page_icon="🔷",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -82,14 +82,14 @@ st.markdown("""
     
     /* Header with grid aesthetic - CATALYZE branding */
     .main-header {
-        font-size: 4.5rem;
-        font-weight: 700;
+        font-size: 4rem;
+        font-weight: 800;
         color: #00F0FF;
-        text-shadow: 0 0 40px rgba(0, 240, 255, 0.6), 0 0 80px rgba(0, 240, 255, 0.4), 0 0 120px rgba(0, 240, 255, 0.2);
+        text-shadow: 0 0 40px rgba(0, 240, 255, 0.5), 0 0 80px rgba(0, 240, 255, 0.3);
         margin-bottom: 0;
         padding: 50px 0 15px 0;
-        font-family: 'JetBrains Mono', monospace;
-        letter-spacing: 14px;
+        font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+        letter-spacing: 0.35em;
         text-align: center;
         position: relative;
         background: linear-gradient(180deg, transparent 0%, rgba(0, 240, 255, 0.02) 50%, transparent 100%);
@@ -115,13 +115,14 @@ st.markdown("""
     }
     
     .sub-header {
-        font-size: 0.95rem;
-        color: #718096;
-        margin-top: 8px;
-        margin-bottom: 20px;
-        font-family: 'JetBrains Mono', monospace;
+        font-size: 1rem;
+        color: #64748b;
+        margin-top: 12px;
+        margin-bottom: 24px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         text-align: center;
-        letter-spacing: 2px;
+        letter-spacing: 0.05em;
+        font-weight: 400;
     }
     
     /* Card styling for output */
@@ -539,7 +540,7 @@ def show_reset_password_form():
 
 def show_auth_page():
     """Display login/register page."""
-    st.markdown('<p class="main-header">⚗️ CATALYZE</p>', unsafe_allow_html=True)
+    st.markdown('<p class="main-header">CATALYZE</p>', unsafe_allow_html=True)
     st.markdown('<p class="sub-header">Transform your ideas into bulletproof prompts</p>', unsafe_allow_html=True)
     
     st.markdown("")
@@ -648,7 +649,7 @@ show_details = False
 
 with st.sidebar:
     # Logo/Brand
-    st.markdown("### ⚗️ Catalyze")
+    st.markdown("### ◆ Catalyze")
     st.markdown('<span style="color: #8b949e; font-size: 0.85rem;">Prompt Transformation Engine</span>', unsafe_allow_html=True)
     
     st.markdown("---")
@@ -720,7 +721,7 @@ with st.sidebar:
 # ============================================================================
 
 # Centered header
-st.markdown('<p class="main-header" style="text-align: center; font-size: 4rem;">⚗️ CATALYZE</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-header" style="text-align: center;">CATALYZE</p>', unsafe_allow_html=True)
 
 st.markdown("")
 st.markdown("")

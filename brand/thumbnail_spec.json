@@ -1,0 +1,89 @@
+{
+  "product_hunt_thumbnail": {
+    "dimensions": "240x240",
+    "format": "PNG or SVG",
+    
+    "design": {
+      "background": {
+        "type": "gradient",
+        "colors": ["#0f172a", "#1e293b"],
+        "direction": "135deg",
+        "description": "Dark slate gradient matching Catalyze dark theme"
+      },
+      
+      "logo_mark": {
+        "primary_element": "diamond",
+        "style": "geometric, minimal",
+        "color": {
+          "fill": "transparent",
+          "stroke": "#00F0FF",
+          "stroke_width": "2-3px"
+        },
+        "effect": {
+          "type": "glow",
+          "color": "rgba(0, 240, 255, 0.4)",
+          "blur": "12px"
+        },
+        "position": "center",
+        "size": "40% of canvas"
+      },
+      
+      "accent": {
+        "inner_element": "spark/node",
+        "description": "Small glowing node or spark inside diamond representing transformation",
+        "color": "#a855f7",
+        "glow": "rgba(168, 85, 247, 0.5)"
+      },
+      
+      "optional_grid_overlay": {
+        "enabled": true,
+        "color": "rgba(0, 240, 255, 0.05)",
+        "size": "8px",
+        "description": "Subtle grid pattern for tech aesthetic"
+      }
+    },
+    
+    "color_palette": {
+      "primary": "#00F0FF",
+      "secondary": "#a855f7",
+      "background_dark": "#0f172a",
+      "background_mid": "#1e293b"
+    },
+    
+    "style_notes": [
+      "Clean, geometric, modern SaaS aesthetic",
+      "Diamond symbolizes refinement/transformation of prompts",
+      "Cyan glow conveys AI/tech energy",
+      "Purple accent represents the synthesis/intelligence aspect",
+      "No text - icon only for thumbnail",
+      "Works well at small sizes (32x32 favicon up to 240x240)"
+    ],
+    
+    "variations": {
+      "favicon": {
+        "size": "32x32",
+        "simplify": "Remove grid overlay, increase stroke width"
+      },
+      "app_icon": {
+        "size": "512x512",
+        "enhance": "Add subtle inner gradient, more detailed glow layers"
+      }
+    }
+  },
+  
+  "brand_typography": {
+    "primary_font": "Inter",
+    "fallbacks": ["SF Pro Display", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+    "logo_text": {
+      "content": "CATALYZE",
+      "weight": 800,
+      "letter_spacing": "0.35em",
+      "case": "uppercase"
+    },
+    "tagline": {
+      "content": "Transform Ideas into Bulletproof Prompts",
+      "weight": 400,
+      "letter_spacing": "0.05em"
+    }
+  }
+}
