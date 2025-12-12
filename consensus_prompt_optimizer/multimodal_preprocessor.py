@@ -478,12 +478,16 @@ def check_multimodal_availability() -> Dict[str, Any]:
     else:
         image_reason = "GEMINI_API_KEY not configured"
     
+    # Compatibility: some callers read `voice`/`image` while others read
+    # `voice_available`/`image_available`.
     return {
+        "voice": voice_available,
+        "image": image_available,
         "voice_available": voice_available,
         "image_available": image_available,
         "voice_reason": voice_reason,
         "image_reason": image_reason,
-        "any_available": voice_available or image_available
+        "any_available": voice_available or image_available,
     }
 
 

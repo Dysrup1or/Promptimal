@@ -1180,8 +1180,14 @@ with col_center:
     
     # Check if multimodal is available
     multimodal_available = check_multimodal_availability()
-    voice_available = multimodal_available.get("voice", False)
-    image_available = multimodal_available.get("image", False)
+    voice_available = multimodal_available.get(
+        "voice",
+        multimodal_available.get("voice_available", False)
+    )
+    image_available = multimodal_available.get(
+        "image",
+        multimodal_available.get("image_available", False)
+    )
     voice_reason = multimodal_available.get("voice_reason", "Voice unavailable")
     image_reason = multimodal_available.get("image_reason", "Image unavailable")
 
