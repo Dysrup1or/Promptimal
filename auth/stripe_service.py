@@ -9,6 +9,7 @@ from typing import Optional, Tuple, Dict, Any
 
 from .database import get_db_connection, init_database
 from .logger import logger
+from .email_service import get_email_service
 
 # Load Stripe configuration from environment
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
@@ -276,6 +277,24 @@ class StripeService:
     # TIER MANAGEMENT
     # =========================================================================
     
+    def _get_user_by_id(self, user_id: int) -> Optional[Dict[str, Any]]:
+        """Get user info by ID for internal use."""
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id, email, first_name, last_name, tier FROM users WHERE id = ?
+            """, (user_id,))
+            row = cursor.fetchone()
+            if row:
+                return {
+                    "id": row["id"],
+                    "email": row["email"],
+                    "first_name": row["first_name"],
+                    "last_name": row["last_name"],
+                    "tier": row["tier"],
+                }
+            return None
+    
     def update_user_tier(self, user_id: int, tier: str) -> None:
         """Update user's tier in the database."""
         with get_db_connection() as conn:
@@ -402,6 +421,18 @@ class StripeService:
         
         # Upgrade user tier
         self.update_user_tier(user_id, "pro")
+        
+        # Send upgrade confirmation email
+        try:
+            user = self._get_user_by_id(user_id)
+            if user:
+                email_service = get_email_service()
+                email_service.send_upgrade_confirmation(
+                    to_email=user["email"],
+                    first_name=user.get("first_name", "")
+                )
+        except Exception as e:
+            logger.warning(f"Failed to send upgrade email: {e}")
         
         return True, f"Upgraded user {user_id} to pro"
     

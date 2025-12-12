@@ -9,6 +9,7 @@ from .models import User, Session, Usage
 from .auth_service import AuthService
 from .usage_service import UsageService
 from .stripe_service import StripeService, get_stripe_service
+from .email_service import EmailService, get_email_service
 from .logger import (
     logger,
     log_auth_event,
@@ -31,6 +32,9 @@ __all__ = [
     # Stripe
     'StripeService',
     'get_stripe_service',
+    # Email
+    'EmailService',
+    'get_email_service',
     # Logging
     'logger',
     'log_auth_event',

@@ -15,6 +15,7 @@ import bcrypt
 from .database import get_db_connection, init_database
 from .models import User, Session
 from .logger import logger, log_auth_event
+from .email_service import get_email_service
 
 
 class AuthService:
@@ -274,6 +275,16 @@ class AuthService:
             # Create session (auto-login)
             token = self.create_session(user_id)
             
+            # Send verification email
+            verification_token = self.create_verification_token(user_id)
+            if verification_token:
+                email_service = get_email_service()
+                email_service.send_verification_email(
+                    to_email=email,
+                    token=verification_token,
+                    first_name=first_name
+                )
+            
             log_auth_event("register", email=email, user_id=user_id, success=True)
             return user, token, None
             
@@ -400,10 +411,17 @@ class AuthService:
                 """, (user.id, hashed_token, expires_at.isoformat()))
                 conn.commit()
             
-            # TODO: Send email with reset link
-            # For now, return token for testing
+            # Send password reset email
+            email_service = get_email_service()
+            email_sent = email_service.send_password_reset_email(
+                to_email=email,
+                token=token,
+                first_name=user.first_name
+            )
+            
             log_auth_event("password_reset_request", email=email, user_id=user.id, success=True)
-            return True, success_msg, token
+            # Return token for development if email not configured
+            return True, success_msg, token if not email_sent else None
             
         except Exception as e:
             log_auth_event("password_reset_request", email=email, success=False, error=str(e))
@@ -578,6 +596,15 @@ class AuthService:
                 
                 conn.commit()
             
+            # Send welcome email after verification
+            user = self.get_user_by_id(user_id)
+            if user:
+                email_service = get_email_service()
+                email_service.send_welcome_email(
+                    to_email=user.email,
+                    first_name=user.first_name
+                )
+            
             log_auth_event("email_verified", user_id=user_id, success=True)
             return True, "Email verified successfully!"
             
@@ -604,9 +631,16 @@ class AuthService:
         if not token:
             return False, "Failed to create verification token.", None
         
-        # TODO: Send email with verification link
-        # For now, return token for testing
-        return True, "Verification email sent! Please check your inbox.", token
+        # Send verification email
+        email_service = get_email_service()
+        email_sent = email_service.send_verification_email(
+            to_email=user.email,
+            token=token,
+            first_name=user.first_name
+        )
+        
+        # Return token for development if email not configured
+        return True, "Verification email sent! Please check your inbox.", token if not email_sent else None
     
     def is_email_verified(self, user_id: int) -> bool:
         """Check if a user's email is verified."""
