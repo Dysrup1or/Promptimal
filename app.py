@@ -204,24 +204,23 @@ st.markdown("""
     
     /* Primary button with cyan - LARGE */
     .stButton > button[kind="primary"] {
-        background: #00F0FF !important;
+        background: linear-gradient(135deg, #00F0FF 0%, #00d4e6 100%) !important;
         color: #000000 !important;
         border: none !important;
-        border-radius: 4px !important;
-        padding: 16px 32px !important;
-        font-weight: 700 !important;
-        font-size: 1.1rem !important;
-        font-family: 'JetBrains Mono', monospace !important;
+        border-radius: 8px !important;
+        padding: 14px 28px !important;
+        font-weight: 600 !important;
+        font-size: 0.95rem !important;
+        font-family: 'Inter', sans-serif !important;
         transition: all 0.3s ease !important;
-        box-shadow: 0 0 30px rgba(0, 240, 255, 0.5) !important;
-        text-transform: uppercase !important;
-        letter-spacing: 2px !important;
+        box-shadow: 0 4px 20px rgba(0, 240, 255, 0.3) !important;
+        letter-spacing: 0.5px !important;
     }
     
     .stButton > button[kind="primary"]:hover {
-        background: #FFFFFF !important;
-        box-shadow: 0 0 50px rgba(0, 240, 255, 0.8) !important;
-        transform: translateY(-3px) !important;
+        background: linear-gradient(135deg, #00d4e6 0%, #00F0FF 100%) !important;
+        box-shadow: 0 6px 30px rgba(0, 240, 255, 0.5) !important;
+        transform: translateY(-2px) !important;
     }
     
     /* Secondary buttons */
@@ -229,14 +228,110 @@ st.markdown("""
         background: transparent !important;
         color: #00F0FF !important;
         border: 1px solid rgba(0, 240, 255, 0.3) !important;
-        border-radius: 4px !important;
-        font-family: 'JetBrains Mono', monospace !important;
+        border-radius: 8px !important;
+        font-family: 'Inter', sans-serif !important;
         transition: all 0.2s ease !important;
     }
     
     .stButton > button:hover {
         background: rgba(0, 240, 255, 0.1) !important;
         border-color: #00F0FF !important;
+    }
+    
+    /* Premium upgrade button */
+    .upgrade-premium .stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #00F0FF 100%) !important;
+        color: #ffffff !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 20px rgba(168, 85, 247, 0.4) !important;
+    }
+    
+    .upgrade-premium .stButton > button[kind="primary"]:hover {
+        box-shadow: 0 6px 30px rgba(168, 85, 247, 0.6), 0 0 40px rgba(0, 240, 255, 0.3) !important;
+    }
+    
+    /* Landing page visual panel */
+    .landing-visual {
+        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+        min-height: 90vh;
+        margin: -1rem -1rem -1rem 0;
+        padding: 40px 40px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        position: relative;
+        border-radius: 0 24px 24px 0;
+    }
+    
+    .landing-visual::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-image: 
+            linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        border-radius: 0 24px 24px 0;
+    }
+    
+    .landing-logo {
+        font-size: 3rem;
+        font-weight: 800;
+        color: #00F0FF;
+        text-shadow: 0 0 60px rgba(0, 240, 255, 0.5);
+        font-family: 'Inter', sans-serif;
+        letter-spacing: 0.25em;
+        text-align: center;
+        margin-bottom: 8px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .landing-tagline {
+        color: #94a3b8;
+        font-size: 1rem;
+        font-family: 'Inter', sans-serif;
+        letter-spacing: 0.02em;
+        text-align: center;
+        margin-bottom: 30px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .landing-hero-image {
+        position: relative;
+        z-index: 1;
+        max-width: 100%;
+        border-radius: 16px;
+        margin-bottom: 30px;
+    }
+    
+    .landing-features {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 400px;
+    }
+    
+    .landing-feature {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 14px;
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+    
+    /* Sidebar branding */
+    .sidebar-brand {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #00F0FF;
+        font-family: 'Inter', sans-serif;
+        letter-spacing: 0.1em;
+        margin-bottom: 4px;
     }
     
     /* Metrics styling */
@@ -650,84 +745,63 @@ def show_auth_page():
     left_col, right_col = st.columns([1.2, 0.8], gap="small")
     
     with left_col:
-        # Visual branding section
-        st.markdown("""
-        <div style="
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-            min-height: 90vh;
-            margin: -1rem -1rem -1rem 0;
-            padding: 80px 60px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            position: relative;
-            border-radius: 0 24px 24px 0;
-        ">
-            <div style="
-                position: absolute;
-                top: 0; left: 0; right: 0; bottom: 0;
-                background-image: 
-                    linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
-                background-size: 40px 40px;
-                pointer-events: none;
-                border-radius: 0 24px 24px 0;
-            "></div>
-            
-            <h1 style="
-                font-size: 4rem;
-                font-weight: 800;
-                color: #00F0FF;
-                text-shadow: 0 0 60px rgba(0, 240, 255, 0.5);
-                font-family: 'Inter', sans-serif;
-                letter-spacing: 0.25em;
-                margin-bottom: 16px;
-                position: relative;
-                z-index: 1;
-            ">CATALYZE</h1>
-            
-            <p style="
-                color: #94a3b8;
-                font-size: 1.2rem;
-                font-family: 'Inter', sans-serif;
-                letter-spacing: 0.02em;
-                margin-bottom: 60px;
-                position: relative;
-                z-index: 1;
-            ">Transform your ideas into bulletproof prompts</p>
-            
-            <div style="position: relative; z-index: 1;">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; color: #64748b;">
-                    <span style="color: #00F0FF;">◆</span>
-                    <span>5-stage AI pipeline with Judge-then-Generate</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; color: #64748b;">
-                    <span style="color: #a855f7;">◆</span>
-                    <span>Success Spec ensures intent preservation</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; color: #64748b;">
-                    <span style="color: #00F0FF;">◆</span>
-                    <span>~$0.02 per optimization with full transparency</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 12px; color: #64748b;">
-                    <span style="color: #a855f7;">◆</span>
-                    <span>40 free credits monthly on Flow tier</span>
-                </div>
+        # Visual branding section - using CSS class
+        st.markdown('<div class="landing-visual">', unsafe_allow_html=True)
+        
+        # Logo
+        st.markdown('<h1 class="landing-logo">CATALYZE</h1>', unsafe_allow_html=True)
+        st.markdown('<p class="landing-tagline">Transform your ideas into bulletproof prompts</p>', unsafe_allow_html=True)
+        
+        # Hero image - Using placeholder, replace with your hosted image URL
+        # To use local: st.image("assets/hero.png", use_container_width=True)
+        hero_image_url = "https://raw.githubusercontent.com/Dysrup1or/Promptimal/main/assets/hero_robots.png"
+        try:
+            st.image(hero_image_url, use_container_width=True)
+        except:
+            # Fallback if image not found
+            st.markdown('''
+            <div style="height: 200px; display: flex; align-items: center; justify-content: center; 
+                        background: linear-gradient(135deg, rgba(0,240,255,0.1), rgba(168,85,247,0.1));
+                        border-radius: 16px; margin: 20px 0;">
+                <span style="color: #64748b;">🤖 AI-Powered Prompt Optimization</span>
+            </div>
+            ''', unsafe_allow_html=True)
+        
+        # Features
+        st.markdown('''
+        <div class="landing-features">
+            <div class="landing-feature">
+                <span style="color: #00F0FF;">◆</span>
+                <span>5-stage AI pipeline with Judge-then-Generate</span>
+            </div>
+            <div class="landing-feature">
+                <span style="color: #a855f7;">◆</span>
+                <span>Success Spec ensures intent preservation</span>
+            </div>
+            <div class="landing-feature">
+                <span style="color: #00F0FF;">◆</span>
+                <span>~$0.02 per optimization with full transparency</span>
+            </div>
+            <div class="landing-feature">
+                <span style="color: #a855f7;">◆</span>
+                <span>40 free credits monthly on Flow tier</span>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        ''', unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
     
     with right_col:
         # Auth form section
         st.markdown("<div style='height: 60px;'></div>", unsafe_allow_html=True)
         
         # Brand header
-        st.markdown("""
+        st.markdown('''
         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 50px;">
             <span style="color: #00F0FF; font-size: 1.5rem;">◆</span>
-            <span style="font-size: 1.3rem; font-weight: 700; color: #00F0FF; font-family: 'Inter', sans-serif; letter-spacing: 0.15em;">CATALYZE</span>
+            <span style="font-size: 1.3rem; font-weight: 700; color: #00F0FF; font-family: Inter, sans-serif; letter-spacing: 0.15em;">CATALYZE</span>
         </div>
-        """, unsafe_allow_html=True)
+        ''', unsafe_allow_html=True)
         
         # Auth tabs
         auth_tab1, auth_tab2 = st.tabs(["Sign in", "Sign up"])
@@ -815,8 +889,8 @@ show_details = False
 
 with st.sidebar:
     # Logo/Brand
-    st.markdown("### ◆ Catalyze")
-    st.markdown('<span style="color: #8b949e; font-size: 0.85rem;">Prompt Transformation Engine</span>', unsafe_allow_html=True)
+    st.markdown('<p class="sidebar-brand">◆ CATALYZE</p>', unsafe_allow_html=True)
+    st.markdown('<span style="color: #64748b; font-size: 0.8rem;">Prompt Transformation Engine</span>', unsafe_allow_html=True)
     
     st.markdown("---")
     
@@ -841,9 +915,11 @@ with st.sidebar:
     # Upgrade/Manage Subscription button
     if current_user.tier == "free":
         if stripe_service.is_configured:
-            if st.button("⚡ Upgrade to Synapse", use_container_width=True, type="primary"):
+            st.markdown('<div class="upgrade-premium">', unsafe_allow_html=True)
+            if st.button("✨ Upgrade to Synapse", use_container_width=True, type="primary"):
                 st.session_state.show_upgrade = True
                 st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
         else:
             if st.button("🚀 Synapse - Coming Soon", use_container_width=True):
                 st.session_state.show_upgrade = True
