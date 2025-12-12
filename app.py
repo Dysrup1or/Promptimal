@@ -1139,14 +1139,13 @@ with col_center:
     )
     
     # ========================================================================
-    # MULTIMODAL INPUT SECTION
+    # MULTIMODAL INPUT SECTION - Always visible for discoverability
     # ========================================================================
     
     # Check if multimodal is available
     multimodal_available = check_multimodal_availability()
     voice_available = multimodal_available.get("voice", False)
     image_available = multimodal_available.get("image", False)
-    any_multimodal = voice_available or image_available
     
     # Initialize multimodal session state
     if 'audio_input' not in st.session_state:
@@ -1154,66 +1153,87 @@ with col_center:
     if 'image_input' not in st.session_state:
         st.session_state.image_input = None
     
-    # Only show multimodal section if at least one is available
-    if any_multimodal:
-        with st.expander("🎤 Voice & 📷 Image Input (Optional) — *Uses 2 credits*", expanded=False):
+    # Multimodal section - always visible with proper styling
+    st.markdown("""
+    <div style="margin: 16px 0 8px 0; display: flex; align-items: center; gap: 8px;">
+        <span style="color: #22c55e; font-size: 0.9rem; font-weight: 600;">✨ Enhanced Input</span>
+        <span style="color: #64748b; font-size: 0.8rem;">— Add voice or image for richer prompts</span>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Two-column layout for voice and image
+    col_voice, col_image = st.columns(2)
+    
+    with col_voice:
+        st.markdown("""
+        <div style="background: rgba(34, 197, 94, 0.05); border: 2px dashed rgba(34, 197, 94, 0.3); border-radius: 12px; padding: 12px; text-align: center;">
+            <span style="font-size: 1.5rem;">🎤</span>
+            <p style="color: #22c55e; font-weight: 600; margin: 8px 0 4px 0; font-size: 0.9rem;">Voice Recording</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if voice_available:
+            audio_bytes = st.audio_input(
+                "Record your prompt idea",
+                key="voice_recorder",
+                help="Click to record, click again to stop. Your voice will be transcribed automatically.",
+                label_visibility="collapsed"
+            )
+            if audio_bytes:
+                st.session_state.audio_input = audio_bytes
+                st.success("✓ Voice recorded successfully!")
+                st.audio(audio_bytes, format="audio/wav")
+        else:
             st.markdown("""
-            <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 16px;">
-                Add voice recordings or images to enhance your prompt. Your inputs will be analyzed and combined with any text you've entered above.
+            <p style="color: #94a3b8; font-size: 0.75rem; text-align: center; margin-top: 8px;">
+                ⚠️ Requires OpenAI API key
             </p>
             """, unsafe_allow_html=True)
-            
-            col_voice, col_image = st.columns(2)
-            
-            with col_voice:
-                if voice_available:
-                    st.markdown("##### 🎤 Voice Recording")
-                    audio_bytes = st.audio_input(
-                        "Record your prompt idea",
-                        key="voice_recorder",
-                        help="Click to record, click again to stop. Your voice will be transcribed automatically."
-                    )
-                    if audio_bytes:
-                        st.session_state.audio_input = audio_bytes
-                        st.success("✓ Voice recorded")
-                        st.audio(audio_bytes, format="audio/wav")
-                else:
-                    st.markdown("##### 🎤 Voice Recording")
-                    st.info("Voice input requires OpenAI API key")
-            
-            with col_image:
-                if image_available:
-                    st.markdown("##### 📷 Image Upload")
-                    uploaded_image = st.file_uploader(
-                        "Upload an image for context",
-                        type=["png", "jpg", "jpeg", "webp", "gif"],
-                        key="image_uploader",
-                        help="Upload an image to analyze. Supports PNG, JPG, WebP, and GIF formats."
-                    )
-                    if uploaded_image:
-                        st.session_state.image_input = uploaded_image
-                        st.success(f"✓ Image uploaded: {uploaded_image.name}")
-                        st.image(uploaded_image, width=200)
-                else:
-                    st.markdown("##### 📷 Image Upload")
-                    st.info("Image analysis requires Gemini API key")
-            
-            # Show current cost indicator
-            has_multimodal = st.session_state.audio_input or st.session_state.image_input
-            if has_multimodal:
-                st.markdown(f"""
-                <div style="margin-top: 16px; padding: 12px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 8px;">
-                    <span style="color: #a855f7; font-weight: 600;">💎 Multimodal Mode Active</span>
-                    <span style="color: #94a3b8; font-size: 0.85rem;"> — This optimization will use <strong>{MULTIMODAL_CREDIT_COST} credits</strong></span>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            # Clear button
-            if has_multimodal:
-                if st.button("🗑️ Clear Multimodal Inputs", type="secondary"):
-                    st.session_state.audio_input = None
-                    st.session_state.image_input = None
-                    st.rerun()
+    
+    with col_image:
+        st.markdown("""
+        <div style="background: rgba(0, 240, 255, 0.05); border: 2px dashed rgba(0, 240, 255, 0.3); border-radius: 12px; padding: 12px; text-align: center;">
+            <span style="font-size: 1.5rem;">📷</span>
+            <p style="color: #00F0FF; font-weight: 600; margin: 8px 0 4px 0; font-size: 0.9rem;">Image Upload</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if image_available:
+            uploaded_image = st.file_uploader(
+                "Upload an image for context",
+                type=["png", "jpg", "jpeg", "webp", "gif"],
+                key="image_uploader",
+                help="Upload an image to analyze. Supports PNG, JPG, WebP, and GIF formats.",
+                label_visibility="collapsed"
+            )
+            if uploaded_image:
+                st.session_state.image_input = uploaded_image
+                st.success(f"✓ {uploaded_image.name}")
+                st.image(uploaded_image, width=150)
+        else:
+            st.markdown("""
+            <p style="color: #94a3b8; font-size: 0.75rem; text-align: center; margin-top: 8px;">
+                ⚠️ Requires Gemini API key
+            </p>
+            """, unsafe_allow_html=True)
+    
+    # Show multimodal status and clear button
+    has_multimodal = st.session_state.audio_input or st.session_state.image_input
+    if has_multimodal:
+        col_status, col_clear = st.columns([3, 1])
+        with col_status:
+            st.markdown(f"""
+            <div style="padding: 10px; background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(0, 240, 255, 0.15) 100%); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 8px; margin-top: 8px;">
+                <span style="color: #a855f7; font-weight: 600;">💎 Multimodal Active</span>
+                <span style="color: #cbd5e1; font-size: 0.85rem;"> — Uses {MULTIMODAL_CREDIT_COST} credits</span>
+            </div>
+            """, unsafe_allow_html=True)
+        with col_clear:
+            st.markdown("<div style='height: 8px'></div>", unsafe_allow_html=True)
+            if st.button("🗑️ Clear", key="clear_multimodal", help="Remove voice and image inputs"):
+                st.session_state.audio_input = None
+                st.session_state.image_input = None
+                st.rerun()
     
     st.markdown("")
     
