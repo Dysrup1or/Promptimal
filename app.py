@@ -11,7 +11,9 @@ import os
 import json
 import time
 import asyncio
+import html
 import streamlit as st
+import streamlit.components.v1 as components
 from pathlib import Path
 from datetime import datetime
 
@@ -1411,23 +1413,43 @@ if 'last_result' in st.session_state:
     # Display prompt with actions
     col_output, col_actions = st.columns([4, 1])
     
+    # Escape HTML in prompt to prevent XSS/rendering issues
+    escaped_prompt = html.escape(prompt_text)
+    
     with col_output:
-        st.markdown(f'<div class="prompt-output">{prompt_text}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="prompt-output">{escaped_prompt}</div>', unsafe_allow_html=True)
     
     with col_actions:
         st.markdown("")
         st.markdown("")
-        if st.button("Copy", use_container_width=True):
-            st.toast("Copied to clipboard!")
-        if st.button("Save", use_container_width=True):
-            st.download_button(
-                label="Download",
-                data=prompt_text,
-                file_name=f"prompt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
-                mime="text/plain",
-                key="save_prompt"
-            )
-        if st.button("Regenerate", use_container_width=True):
+        
+        # Copy to Clipboard button with JavaScript
+        if st.button("📋 Copy", use_container_width=True, key="copy_btn"):
+            # Inject JavaScript to copy to clipboard
+            escaped_for_js = prompt_text.replace('\\', '\\\\').replace('`', '\\`').replace('$', '\\$')
+            components.html(f"""
+                <script>
+                    navigator.clipboard.writeText(`{escaped_for_js}`).then(function() {{
+                        window.parent.postMessage({{type: 'streamlit:toast', message: 'Copied to clipboard!'}}, '*');
+                    }}).catch(function(err) {{
+                        console.error('Copy failed: ', err);
+                    }});
+                </script>
+            """, height=0)
+            st.toast("✅ Copied to clipboard!")
+        
+        # Direct download button (no nesting required)
+        st.download_button(
+            label="💾 Save",
+            data=prompt_text,
+            file_name=f"prompt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+            mime="text/plain",
+            key="save_prompt",
+            use_container_width=True
+        )
+        
+        # Regenerate button
+        if st.button("🔄 Regenerate", use_container_width=True, key="regen_btn"):
             st.session_state.pop('last_result', None)
             st.rerun()
     
