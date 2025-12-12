@@ -12,6 +12,7 @@ import json
 import time
 import asyncio
 import html
+import hashlib
 import streamlit as st
 import streamlit.components.v1 as components
 from pathlib import Path
@@ -1056,6 +1057,39 @@ with st.sidebar:
     
     # User - Just name
     st.markdown(f"**{current_user.full_name}**")
+
+    # Admin-only diagnostics to quickly confirm deploy + env wiring on Railway
+    if getattr(current_user, "tier", "") == "admin":
+        with st.expander("Diagnostics", expanded=False):
+            try:
+                app_hash = hashlib.sha1(Path(__file__).read_bytes()).hexdigest()[:8]
+            except Exception:
+                app_hash = "unknown"
+
+            groq_set = bool(os.getenv("GROQ_API_KEY", "").strip())
+            deepseek_set = bool(os.getenv("DEEPSEEK_API_KEY", "").strip())
+            gemini_set = bool(os.getenv("GEMINI_API_KEY", "").strip())
+            openai_set = bool(os.getenv("OPENAI_API_KEY", "").strip())
+
+            mm = check_multimodal_availability()
+
+            st.write({
+                "app_hash": app_hash,
+                "streamlit_version": getattr(st, "__version__", "unknown"),
+                "railway_public_domain": os.getenv("RAILWAY_PUBLIC_DOMAIN", ""),
+                "keys_present": {
+                    "GROQ_API_KEY": groq_set,
+                    "DEEPSEEK_API_KEY": deepseek_set,
+                    "GEMINI_API_KEY": gemini_set,
+                    "OPENAI_API_KEY": openai_set,
+                },
+                "multimodal": {
+                    "voice": mm.get("voice"),
+                    "image": mm.get("image"),
+                    "voice_reason": mm.get("voice_reason"),
+                    "image_reason": mm.get("image_reason"),
+                },
+            })
     
     st.markdown("")
     
