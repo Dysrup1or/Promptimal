@@ -62,12 +62,13 @@ st.set_page_config(
 st.markdown("""
 <style>
     /* Import fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
     
     /* Main dark theme - Pure Black */
     .stApp {
         background-color: #000000;
-        font-family: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     
     /* Sidebar styling - Dark charcoal */
@@ -352,34 +353,127 @@ st.markdown("""
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
+    /* Split layout landing page */
+    .landing-container {
+        display: flex;
+        min-height: 100vh;
+        margin: -1rem -1rem;
+    }
+    
+    .landing-visual {
+        flex: 1.2;
+        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 60px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .landing-visual::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: 
+            linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+    }
+    
+    .landing-logo {
+        font-size: 4rem;
+        font-weight: 800;
+        color: #00F0FF;
+        text-shadow: 0 0 60px rgba(0, 240, 255, 0.5);
+        font-family: 'Inter', sans-serif;
+        letter-spacing: 0.3em;
+        z-index: 1;
+    }
+    
+    .landing-tagline {
+        color: #94a3b8;
+        font-size: 1.1rem;
+        margin-top: 16px;
+        font-family: 'Inter', sans-serif;
+        letter-spacing: 0.05em;
+        z-index: 1;
+    }
+    
+    .landing-features {
+        margin-top: 60px;
+        z-index: 1;
+    }
+    
+    .landing-feature {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        color: #64748b;
+        font-size: 0.95rem;
+    }
+    
+    .landing-feature-icon {
+        color: #00F0FF;
+        font-size: 1.1rem;
+    }
+    
+    .landing-auth {
+        flex: 0.8;
+        background: #000000;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 60px 80px;
+    }
+    
+    .auth-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 40px;
+    }
+    
+    .auth-brand-icon {
+        color: #00F0FF;
+        font-size: 1.5rem;
+    }
+    
+    .auth-brand-text {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #00F0FF;
+        font-family: 'Inter', sans-serif;
+        letter-spacing: 0.15em;
+    }
+    
     /* Auth form styling */
     .auth-container {
-        max-width: 400px;
-        margin: 60px auto;
-        padding: 40px;
-        background: #0A0A0A;
-        border: 1px solid rgba(0, 240, 255, 0.2);
-        border-radius: 8px;
+        max-width: 100%;
     }
     
     .auth-header {
-        text-align: center;
         margin-bottom: 30px;
     }
     
     .auth-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #00F0FF;
-        text-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
-        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #f1f5f9;
+        font-family: 'Inter', sans-serif;
         margin-bottom: 8px;
     }
     
     .auth-subtitle {
-        color: #718096;
-        font-size: 0.9rem;
-        font-family: 'JetBrains Mono', monospace;
+        color: #64748b;
+        font-size: 0.95rem;
+        font-family: 'Inter', sans-serif;
     }
     
     .tier-badge {
@@ -539,35 +633,114 @@ def show_reset_password_form():
 
 
 def show_auth_page():
-    """Display login/register page."""
-    st.markdown('<p class="main-header">CATALYZE</p>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Transform your ideas into bulletproof prompts</p>', unsafe_allow_html=True)
+    """Display elegant split-layout login/register page."""
     
-    st.markdown("")
+    # Handle special views (forgot password, reset)
+    if st.session_state.auth_view in ['forgot_password', 'reset_password']:
+        st.markdown('<p class="main-header">CATALYZE</p>', unsafe_allow_html=True)
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.session_state.auth_view == 'forgot_password':
+                show_forgot_password_form()
+            else:
+                show_reset_password_form()
+        return
     
-    # Center the auth form
-    col1, col2, col3 = st.columns([1, 2, 1])
+    # Split layout: Visual left, Auth right
+    left_col, right_col = st.columns([1.2, 0.8], gap="small")
     
-    with col2:
-        # Handle special views
-        if st.session_state.auth_view == 'forgot_password':
-            show_forgot_password_form()
-            return
+    with left_col:
+        # Visual branding section
+        st.markdown("""
+        <div style="
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+            min-height: 90vh;
+            margin: -1rem -1rem -1rem 0;
+            padding: 80px 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            border-radius: 0 24px 24px 0;
+        ">
+            <div style="
+                position: absolute;
+                top: 0; left: 0; right: 0; bottom: 0;
+                background-image: 
+                    linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+                background-size: 40px 40px;
+                pointer-events: none;
+                border-radius: 0 24px 24px 0;
+            "></div>
+            
+            <h1 style="
+                font-size: 4rem;
+                font-weight: 800;
+                color: #00F0FF;
+                text-shadow: 0 0 60px rgba(0, 240, 255, 0.5);
+                font-family: 'Inter', sans-serif;
+                letter-spacing: 0.25em;
+                margin-bottom: 16px;
+                position: relative;
+                z-index: 1;
+            ">CATALYZE</h1>
+            
+            <p style="
+                color: #94a3b8;
+                font-size: 1.2rem;
+                font-family: 'Inter', sans-serif;
+                letter-spacing: 0.02em;
+                margin-bottom: 60px;
+                position: relative;
+                z-index: 1;
+            ">Transform your ideas into bulletproof prompts</p>
+            
+            <div style="position: relative; z-index: 1;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; color: #64748b;">
+                    <span style="color: #00F0FF;">◆</span>
+                    <span>5-stage AI pipeline with Judge-then-Generate</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; color: #64748b;">
+                    <span style="color: #a855f7;">◆</span>
+                    <span>Success Spec ensures intent preservation</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; color: #64748b;">
+                    <span style="color: #00F0FF;">◆</span>
+                    <span>~$0.02 per optimization with full transparency</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; color: #64748b;">
+                    <span style="color: #a855f7;">◆</span>
+                    <span>40 free credits monthly on Flow tier</span>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with right_col:
+        # Auth form section
+        st.markdown("<div style='height: 60px;'></div>", unsafe_allow_html=True)
         
-        if st.session_state.auth_view == 'reset_password':
-            show_reset_password_form()
-            return
+        # Brand header
+        st.markdown("""
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 50px;">
+            <span style="color: #00F0FF; font-size: 1.5rem;">◆</span>
+            <span style="font-size: 1.3rem; font-weight: 700; color: #00F0FF; font-family: 'Inter', sans-serif; letter-spacing: 0.15em;">CATALYZE</span>
+        </div>
+        """, unsafe_allow_html=True)
         
-        # Normal login/register tabs
-        auth_tab1, auth_tab2 = st.tabs(["Login", "Register"])
+        # Auth tabs
+        auth_tab1, auth_tab2 = st.tabs(["Sign in", "Sign up"])
         
         with auth_tab1:
-            st.markdown("#### Welcome back!")
+            st.markdown("<h2 style='font-size: 1.75rem; font-weight: 600; color: #f1f5f9; font-family: Inter, sans-serif; margin-bottom: 8px;'>Welcome back</h2>", unsafe_allow_html=True)
+            st.markdown("<p style='color: #64748b; font-size: 0.95rem; margin-bottom: 24px;'>Enter your credentials to access your account</p>", unsafe_allow_html=True)
+            
             with st.form("login_form"):
                 email = st.text_input("Email", placeholder="you@example.com")
                 password = st.text_input("Password", type="password", placeholder="••••••••")
                 
-                submitted = st.form_submit_button("Login", use_container_width=True, type="primary")
+                submitted = st.form_submit_button("Sign in", use_container_width=True, type="primary")
                 
                 if submitted:
                     user, token, error = auth_service.login(email, password)
@@ -576,17 +749,18 @@ def show_auth_page():
                     else:
                         st.session_state.session_token = token
                         st.session_state.current_user = user
-                        st.success("Login successful")
+                        st.success("Welcome back!")
                         time.sleep(0.5)
                         st.rerun()
             
-            # Forgot password link
             if st.button("Forgot your password?", type="secondary"):
                 st.session_state.auth_view = 'forgot_password'
                 st.rerun()
         
         with auth_tab2:
-            st.markdown("#### Create your account")
+            st.markdown("<h2 style='font-size: 1.75rem; font-weight: 600; color: #f1f5f9; font-family: Inter, sans-serif; margin-bottom: 8px;'>Create account</h2>", unsafe_allow_html=True)
+            st.markdown("<p style='color: #64748b; font-size: 0.95rem; margin-bottom: 24px;'>Start optimizing your prompts today</p>", unsafe_allow_html=True)
+            
             with st.form("register_form"):
                 reg_email = st.text_input("Email", placeholder="you@example.com", key="reg_email")
                 
@@ -610,19 +784,11 @@ def show_auth_page():
                     else:
                         st.session_state.session_token = token
                         st.session_state.current_user = user
-                        st.success("Account created successfully")
+                        st.success("Account created successfully!")
                         time.sleep(0.5)
                         st.rerun()
             
-            st.markdown("---")
-            st.markdown('<p style="color: #8b949e; font-size: 0.85rem; text-align: center;">· Flow tier includes 40 Catalyze Credits/month</p>', unsafe_allow_html=True)
-    
-    # Footer
-    st.markdown("""
-    <div class="footer">
-        Catalyze | AI-Powered Prompt Transformation | Secure & Private
-    </div>
-    """, unsafe_allow_html=True)
+            st.markdown("<p style='color: #64748b; font-size: 0.85rem; text-align: center; margin-top: 16px;'>Flow tier includes 40 free Catalyze Credits/month</p>", unsafe_allow_html=True)
 
 
 # Check if user is authenticated
