@@ -30,8 +30,10 @@ Before starting, ensure you have:
 ### Accounts Needed
 - [ ] **GitHub account** - Free at https://github.com/signup
 - [ ] **Railway account** - Free tier at https://railway.app (requires GitHub)
-- [ ] **Gemini API Key** - Free at https://makersuite.google.com/app/apikey
-- [ ] **DeepSeek API Key** - At https://platform.deepseek.com/api_keys (requires $5 deposit)
+- [ ] **Groq API Key** - Primary (https://console.groq.com/keys)
+- [ ] **DeepSeek API Key (fallback)** - Optional but recommended (https://platform.deepseek.com/api_keys)
+- [ ] **Gemini API Key (image)** - Only required for image upload (https://makersuite.google.com/app/apikey)
+- [ ] **OpenAI API Key (voice)** - Only required for voice transcription
 
 ### Software Installed
 - [ ] **Git** - Verify: `git --version` (should show version 2.x+)
@@ -271,8 +273,10 @@ Click **"+ New Variable"** for each:
 
 | Variable Name | Value | Notes |
 |--------------|-------|-------|
-| `GEMINI_API_KEY` | `your-actual-gemini-key` | From Google AI Studio |
-| `DEEPSEEK_API_KEY` | `your-actual-deepseek-key` | From DeepSeek Platform |
+| `GROQ_API_KEY` | `your-actual-groq-key` | Primary provider for normal runs |
+| `DEEPSEEK_API_KEY` | `your-actual-deepseek-key` | Fallback provider (recommended) |
+| `GEMINI_API_KEY` | `your-actual-gemini-key` | Required only for image upload |
+| `OPENAI_API_KEY` | `your-actual-openai-key` | Required only for voice transcription |
 
 ### 7.3 Reference Database URL
 
@@ -419,7 +423,7 @@ Takes 5 minutes to 24 hours depending on registrar.
 
 **Check:**
 1. Go to Variables tab
-2. Verify `GEMINI_API_KEY` and `DEEPSEEK_API_KEY` are set
+2. Verify `GROQ_API_KEY` (or `DEEPSEEK_API_KEY` fallback) is set
 3. Verify `DATABASE_URL` is linked
 
 **View Logs:**

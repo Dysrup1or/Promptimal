@@ -4,19 +4,19 @@ A production-ready AI-powered platform that transforms raw prompt ideas into bul
 
 ## Overview
 
-Catalyze orchestrates 5 AI stages to transform a raw prompt idea into a production-ready "golden prompt":
+Catalyze orchestrates 5 stages to transform a raw prompt idea into a production-ready prompt:
 
-1. **Discerner** (Gemini Flash) - Parses raw ideas into structured components
-2. **Expander** (DeepSeek, single call ≤350 tokens) - Generates 3 prompt variations (role-based, CoT, role-immersive)
-3. **Critic** (Gemini Flash) - Evaluates variations and identifies issues
-4. **Synthesizer** (Gemini Flash) - Creates the final optimized prompt with anti-hallucination guardrails
+1. **Discerner** - Classifies intent and constraints
+2. **CriticFirst** - Builds the rubric before generation
+3. **Expander** - Generates 3 prompt variations
+4. **Ranker** - Scores and ranks variations
+5. **Synthesizer** - Produces the final optimized prompt
 
 ## Cost Constraints
 
-- **Target**: < $0.05 USD per run
-- **Enforcement**: Only ONE DeepSeek call (≤350 tokens) per run
-- **Other calls**: Gemini Flash (free/cheap)
-- **Token cap**: 2,000 tokens per LLM call (configurable)
+- Costs depend on the configured providers and models.
+- Default routing uses **Groq** for normal runs with **DeepSeek** as a fallback.
+- Token caps are enforced in the wrapper (see `GROQ_TOKEN_CAP` in `consensus_prompt_optimizer/config.py`).
 
 ## Installation
 
@@ -35,8 +35,14 @@ cp .env.example .env
 ## Configuration
 
 **Required API Keys:**
-- `GEMINI_API_KEY` - Google Gemini API key
-- `DEEPSEEK_API_KEY` - DeepSeek API key
+- `GROQ_API_KEY` - Primary provider for normal runs
+
+**Fallback (recommended):**
+- `DEEPSEEK_API_KEY` - Used automatically if Groq fails/unavailable
+
+**Multimodal (only if used):**
+- `GEMINI_API_KEY` - Required for image upload / analysis
+- `OPENAI_API_KEY` - Required for voice transcription
 
 **Optional:**
 - `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` - For telemetry (production monitoring)

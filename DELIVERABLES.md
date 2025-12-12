@@ -21,8 +21,10 @@
 ### Pipeline (Judge-then-Generate)
 ```
 User Idea → Discerner → CriticFirst → Expander → Ranker → Synthesizer → Final Prompt
-             (Gemini)    (Gemini)       (Groq)   (Gemini)  (Gemini)
+             (Groq*)     (Groq*)       (Groq*)   (Groq*)   (Groq*)
 ```
+
+\* Default routing uses Groq for normal runs with DeepSeek as fallback.
 
 ### Project Structure
 ```
@@ -54,11 +56,18 @@ Promptly/
 
 **Model Routing** (`config.py`):
 - `GEMINI_FAST = "gemini/gemini-2.0-flash"` - Free tier for 4 stages
-- `GROQ_EXPAND = "groq/llama-3.3-70b-versatile"` - Expander only ($0.59/$0.79 per 1M)
+- `GROQ_EXPAND = "groq/llama-3.3-70b-versatile"` - Default primary model (Groq)
+- `FALLBACK_TEXT_MODEL = "deepseek/deepseek-chat"` - Default fallback if Groq fails
 
 **API Keys Required**:
-- `GEMINI_API_KEY` - Google AI Studio
-- `GROQ_API_KEY` - Groq Console
+- `GROQ_API_KEY` - Groq Console (primary)
+
+**Fallback (recommended):**
+- `DEEPSEEK_API_KEY` - DeepSeek Platform (fallback)
+
+**Multimodal (only if used):**
+- `GEMINI_API_KEY` - Google AI Studio (image analysis)
+- `OPENAI_API_KEY` - OpenAI (voice transcription)
 
 ## 2. Exact Prompt Used (for Expander Agent)
 
@@ -152,12 +161,8 @@ Output ONLY valid JSON.
 {
   "meta": {
     "total_cost_estimate_usd": 0.042,
-    "deepseek_calls": 1,
     "models_used": [
-      "gemini/gemini-1.5-flash",
-      "deepseek/deepseek-chat",
-      "gemini/gemini-1.5-flash",
-      "gemini/gemini-1.5-flash"
+         "groq/llama-3.3-70b-versatile"
     ]
   }
 }
@@ -170,7 +175,7 @@ Output ONLY valid JSON.
 
 **What's Delivered:**
 - ✅ 4 agents with strict JSON schemas
-- ✅ Single DeepSeek call enforcement (< $0.05 cost)
+- ✅ Groq-first routing with DeepSeek fallback
 - ✅ CLI with all flags (--idea, --batch, --dry-run, etc.)
 - ✅ Dry-run mode with cost estimation
 - ✅ Batch processing support

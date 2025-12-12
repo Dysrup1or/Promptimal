@@ -2,6 +2,13 @@
 
 **Status**: ✅ 60% Core Implementation Complete
 
+## December 12, 2025 Update (Production)
+
+- Streamlit UI: fixed multimodal availability gating so voice/image widgets unlock when keys + deps are present.
+- Provider routing: normal runs prefer **Groq** with **DeepSeek** fallback.
+- Usage tiers: fixed unlimited-tier limit comparisons (no `int > None` crash).
+- Deployment: added lightweight build/env diagnostics for admin users to verify Railway is running the expected code and seeing required environment variables.
+
 ## What You Asked For
 
 A Senior AI Engineer and Python Architect task to produce the core 60% of a production-ready, CLI-based "Consensus Prompt Optimizer" with CrewAI and LiteLLM.

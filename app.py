@@ -943,18 +943,7 @@ def show_auth_page():
         
         # Product Label
         st.markdown('<p style="color: #94a3b8; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.08em; margin-top: 24px; margin-bottom: 16px; text-transform: uppercase;">Product: Catalyze</p>', unsafe_allow_html=True)
-        
-        # Feature 1
-        st.markdown('<p style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px; color: #e2e8f0; font-size: 0.95rem;"><span style="color: #22c55e; font-size: 1rem;">◆</span> 5-stage AI pipeline with Judge-then-Generate</p>', unsafe_allow_html=True)
-        
-        # Feature 2
-        st.markdown('<p style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px; color: #e2e8f0; font-size: 0.95rem;"><span style="color: #22c55e; font-size: 1rem;">◆</span> Success Spec ensures intent preservation</p>', unsafe_allow_html=True)
-        
-        # Feature 3
-        st.markdown('<p style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px; color: #e2e8f0; font-size: 0.95rem;"><span style="color: #22c55e; font-size: 1rem;">◆</span> ~$0.02 per optimization with full transparency</p>', unsafe_allow_html=True)
-        
-        # Feature 4
-        st.markdown('<p style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px; color: #e2e8f0; font-size: 0.95rem;"><span style="color: #22c55e; font-size: 1rem;">◆</span> 40 free credits monthly on Flow tier</p>', unsafe_allow_html=True)
+
     
     with right_col:
         # Auth form section wrapped in glass card
