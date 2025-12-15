@@ -10,7 +10,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Promptly - Judge-then-Generate Pipeline",
+  title: "Catalyze - Prompt Transformation Engine",
   description: "Turn any idea into a bulletproof prompt on the first try.",
 };
 

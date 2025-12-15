@@ -9,11 +9,17 @@ Feature Flag: Only available for Synapse (Pro) tier users.
 
 import os
 import json
+import uuid
 import httpx
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Sequence
 from dataclasses import dataclass
 
-from .schemas import SuccessSpec
+try:
+    # Preferred: unified contract package (Phase 2)
+    from catalyze_contract import SuccessSpec  # type: ignore
+except Exception:
+    # Fallback: local Promptly schema (Phase 1 compatibility)
+    from .schemas import SuccessSpec
 
 
 # ============================================================================
@@ -21,7 +27,15 @@ from .schemas import SuccessSpec
 # ============================================================================
 
 TRIBUNAL_API_URL = os.getenv("TRIBUNAL_API_URL", "http://localhost:8001")
-TRIBUNAL_API_KEY = os.getenv("TRIBUNAL_API_KEY", "")
+
+# Shared key for CVA Tribunal endpoints.
+# CVA expects this as CVA_API_TOKEN server-side.
+TRIBUNAL_API_TOKEN = (
+    os.getenv("TRIBUNAL_API_TOKEN", "")
+    or os.getenv("TRIBUNAL_API_KEY", "")
+    or os.getenv("CVA_API_TOKEN", "")
+)
+
 TRIBUNAL_TIMEOUT = int(os.getenv("TRIBUNAL_TIMEOUT", "30"))
 
 
@@ -29,10 +43,11 @@ TRIBUNAL_TIMEOUT = int(os.getenv("TRIBUNAL_TIMEOUT", "30"))
 class TribunalResponse:
     """Response from The Tribunal verification."""
     success: bool
-    verification_id: Optional[str] = None
+    run_id: Optional[str] = None
+    project_id: Optional[str] = None
     status: str = "pending"
     message: str = ""
-    tribunal_url: Optional[str] = None
+    verdicts_url: Optional[str] = None
 
 
 class TribunalService:
@@ -45,7 +60,7 @@ class TribunalService:
     
     def __init__(self):
         self._api_url = TRIBUNAL_API_URL.rstrip("/")
-        self._api_key = TRIBUNAL_API_KEY
+        self._api_token = TRIBUNAL_API_TOKEN
         self._timeout = TRIBUNAL_TIMEOUT
     
     @property
@@ -56,118 +71,198 @@ class TribunalService:
     @property
     def has_api_key(self) -> bool:
         """Check if API key is set for authenticated requests."""
-        return bool(self._api_key)
-    
-    def build_tribunal_context(
+        return bool(self._api_token)
+
+    def _auth_headers(self) -> Dict[str, str]:
+        headers = {"Content-Type": "application/json"}
+        if self._api_token:
+            headers["Authorization"] = f"Bearer {self._api_token}"
+        return headers
+
+    async def _upload_artifacts_async(
         self,
-        success_spec: SuccessSpec,
+        *,
+        project_id: str,
         optimized_prompt: str,
         original_idea: str,
-        user_tier: str = "synapse"
-    ) -> Dict[str, Any]:
+        success_spec: SuccessSpec,
+        extra_files: Optional[Sequence[tuple[str, bytes, str]]] = None,
+    ) -> None:
+        """Upload a minimal project payload to CVA so Tribunal scans have a project_root.
+
+        CVA /upload requires at least one file and (if upload_id provided) it must be alphanumeric.
         """
-        Build the tribunal_context payload for The Tribunal.
-        
-        Args:
-            success_spec: The Success Spec from Catalyze
-            optimized_prompt: The final optimized prompt
-            original_idea: The user's original idea
-            user_tier: The user's subscription tier
-            
-        Returns:
-            tribunal_context payload ready for API submission
-        """
-        return {
-            "source": "catalyze",
-            "version": "v2",
-            "tier": user_tier,
-            "tribunal_context": {
-                "intent_summary": success_spec.intent_summary,
-                "key_constraints": success_spec.key_constraints,
-                "expected_behavior": success_spec.expected_behavior,
-            },
-            "artifacts": {
-                "optimized_prompt": optimized_prompt,
-                "original_idea": original_idea[:500],
-            },
-            "verification_requested": True,
-        }
+
+        optimized_prompt = (optimized_prompt or "")[:100_000]
+        original_idea = (original_idea or "")[:100_000]
+        success_spec_json = json.dumps(success_spec.model_dump(), ensure_ascii=False, indent=2)[:200_000]
+
+        files: list[tuple[str, tuple[str, bytes, str]]] = [
+            ("files", ("optimized_prompt.txt", optimized_prompt.encode("utf-8"), "text/plain")),
+            ("files", ("original_idea.txt", original_idea.encode("utf-8"), "text/plain")),
+            ("files", ("success_spec.json", success_spec_json.encode("utf-8"), "application/json")),
+        ]
+
+        data: list[tuple[str, str]] = [
+            ("upload_id", project_id),
+            ("paths", "optimized_prompt.txt"),
+            ("paths", "original_idea.txt"),
+            ("paths", "success_spec.json"),
+        ]
+
+        if extra_files:
+            for rel_path, content, mime in extra_files:
+                safe_rel = (rel_path or "").replace("\\\\", "/").lstrip("/")
+                if not safe_rel:
+                    continue
+                safe_name = safe_rel.split("/")[-1]
+                files.append(("files", (safe_name, content, mime)))
+                data.append(("paths", safe_rel))
+
+        headers: Dict[str, str] = {}
+        if self._api_token:
+            headers["Authorization"] = f"Bearer {self._api_token}"
+
+        async with httpx.AsyncClient(timeout=self._timeout) as client:
+            resp = await client.post(
+                f"{self._api_url}/upload",
+                data=data,
+                files=files,
+                headers=headers,
+            )
+
+        if resp.status_code >= 400:
+            raise RuntimeError(f"CVA upload failed: {resp.status_code}")
     
     async def submit_for_verification_async(
         self,
         success_spec: SuccessSpec,
         optimized_prompt: str,
         original_idea: str,
-        user_tier: str = "synapse"
+        user_tier: str = "synapse",
+        *,
+        callback_url: Optional[str] = None,
+        callback_bearer_token: Optional[str] = None,
+        scan_mode: str = "full",
     ) -> TribunalResponse:
         """
-        Submit Success Spec to The Tribunal for verification (async).
+        Submit intent to CVA Tribunal and enqueue a scan (async).
         
-        Only available for Synapse tier users (cva_direct_link = True).
+        Integration contract:
+        - Create run_id (UUID)
+        - Upload minimal artifacts into CVA upload store (project_id)
+        - POST /api/intent (requires Bearer token)
+        - POST /api/trigger_scan (requires Bearer token)
         
         Args:
             success_spec: The Success Spec from optimization
             optimized_prompt: The final optimized prompt
             original_idea: User's original idea
             user_tier: User's subscription tier
+            callback_url: Optional webhook callback URL for CVA completion events
+            callback_bearer_token: Optional bearer token forwarded to callback
+            scan_mode: "diff" or "full" (default: full for prompt artifacts)
             
         Returns:
             TribunalResponse with verification status
         """
-        if user_tier not in ("synapse", "pro", "enterprise"):
+        if user_tier not in ("synapse", "pro", "enterprise", "admin"):
             return TribunalResponse(
                 success=False,
                 status="unauthorized",
                 message="The Tribunal integration requires Synapse tier or higher"
             )
-        
-        payload = self.build_tribunal_context(
-            success_spec, optimized_prompt, original_idea, user_tier
-        )
-        
-        headers = {"Content-Type": "application/json"}
-        if self._api_key:
-            headers["Authorization"] = f"Bearer {self._api_key}"
-        
+
+        if not self._api_token:
+            return TribunalResponse(
+                success=False,
+                status="misconfigured",
+                message="Missing TRIBUNAL_API_TOKEN (must match CVA_API_TOKEN on the Tribunal server)",
+            )
+
+        run_uuid = uuid.uuid4()
+        run_id = str(run_uuid)
+        project_id = run_uuid.hex  # must be alphanumeric to satisfy CVA /upload
+
         try:
+            await self._upload_artifacts_async(
+                project_id=project_id,
+                optimized_prompt=optimized_prompt,
+                original_idea=original_idea,
+                success_spec=success_spec,
+            )
+
+            intent_payload: Dict[str, Any] = {
+                "run_id": run_id,
+                "project_id": project_id,
+                "success_spec": success_spec.model_dump(),
+            }
+            if callback_url:
+                intent_payload["initiator"] = {
+                    "callback_url": callback_url,
+                    "callback_bearer_token": callback_bearer_token,
+                }
+
             async with httpx.AsyncClient(timeout=self._timeout) as client:
-                response = await client.post(
-                    f"{self._api_url}/api/verify",
-                    json=payload,
-                    headers=headers
+                intent_resp = await client.post(
+                    f"{self._api_url}/api/intent",
+                    json=intent_payload,
+                    headers=self._auth_headers(),
                 )
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    return TribunalResponse(
-                        success=True,
-                        verification_id=data.get("verification_id"),
-                        status=data.get("status", "submitted"),
-                        message="Successfully submitted to The Tribunal",
-                        tribunal_url=data.get("tribunal_url")
-                    )
-                else:
+                if intent_resp.status_code >= 400:
                     return TribunalResponse(
                         success=False,
+                        run_id=run_id,
+                        project_id=project_id,
                         status="error",
-                        message=f"The Tribunal returned status {response.status_code}"
+                        message=f"The Tribunal /api/intent returned {intent_resp.status_code}",
                     )
-                    
+
+                trigger_resp = await client.post(
+                    f"{self._api_url}/api/trigger_scan",
+                    json={"run_id": run_id, "mode": scan_mode},
+                    headers=self._auth_headers(),
+                )
+                if trigger_resp.status_code >= 400:
+                    return TribunalResponse(
+                        success=False,
+                        run_id=run_id,
+                        project_id=project_id,
+                        status="error",
+                        message=f"The Tribunal /api/trigger_scan returned {trigger_resp.status_code}",
+                    )
+
+                data = trigger_resp.json()
+                return TribunalResponse(
+                    success=True,
+                    run_id=run_id,
+                    project_id=project_id,
+                    status=str(data.get("status") or "queued"),
+                    message="Submitted to The Tribunal",
+                    verdicts_url=data.get("verdicts_url"),
+                )
+        
         except httpx.TimeoutException:
             return TribunalResponse(
                 success=False,
+                run_id=run_id,
+                project_id=project_id,
                 status="timeout",
                 message="The Tribunal request timed out"
             )
         except httpx.ConnectError:
             return TribunalResponse(
                 success=False,
+                run_id=run_id,
+                project_id=project_id,
                 status="offline",
                 message="The Tribunal service is not available"
             )
         except Exception as e:
             return TribunalResponse(
                 success=False,
+                run_id=run_id,
+                project_id=project_id,
                 status="error",
                 message=f"Failed to connect to The Tribunal: {str(e)}"
             )
@@ -179,80 +274,16 @@ class TribunalService:
         original_idea: str,
         user_tier: str = "synapse"
     ) -> TribunalResponse:
-        """
-        Submit Success Spec to The Tribunal for verification (sync).
-        
-        Synchronous wrapper for submit_for_verification_async.
-        Simulates the call if The Tribunal is not running locally.
-        """
-        if user_tier not in ("synapse", "pro", "enterprise"):
-            return TribunalResponse(
-                success=False,
-                status="unauthorized",
-                message="The Tribunal integration requires Synapse tier or higher"
+        """Sync wrapper around the async Tribunal submission."""
+        import asyncio
+
+        return asyncio.run(
+            self.submit_for_verification_async(
+                success_spec=success_spec,
+                optimized_prompt=optimized_prompt,
+                original_idea=original_idea,
+                user_tier=user_tier,
             )
-        
-        payload = self.build_tribunal_context(
-            success_spec, optimized_prompt, original_idea, user_tier
-        )
-        
-        headers = {"Content-Type": "application/json"}
-        if self._api_key:
-            headers["Authorization"] = f"Bearer {self._api_key}"
-        
-        try:
-            with httpx.Client(timeout=self._timeout) as client:
-                response = client.post(
-                    f"{self._api_url}/api/verify",
-                    json=payload,
-                    headers=headers
-                )
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    return TribunalResponse(
-                        success=True,
-                        verification_id=data.get("verification_id"),
-                        status=data.get("status", "submitted"),
-                        message="Successfully submitted to The Tribunal",
-                        tribunal_url=data.get("tribunal_url")
-                    )
-                else:
-                    return TribunalResponse(
-                        success=False,
-                        status="error",
-                        message=f"The Tribunal returned status {response.status_code}"
-                    )
-                    
-        except httpx.ConnectError:
-            # The Tribunal not running - simulate success for development
-            return self._simulate_tribunal_response(payload)
-        except Exception as e:
-            return TribunalResponse(
-                success=False,
-                status="error",
-                message=f"Failed to connect to The Tribunal: {str(e)}"
-            )
-    
-    def _simulate_tribunal_response(self, payload: Dict[str, Any]) -> TribunalResponse:
-        """
-        Simulate The Tribunal response when service is not available.
-        
-        Used for development/testing when The Tribunal is not running locally.
-        """
-        import hashlib
-        
-        # Generate a simulated verification ID
-        payload_hash = hashlib.sha256(
-            json.dumps(payload, sort_keys=True).encode()
-        ).hexdigest()[:12]
-        
-        return TribunalResponse(
-            success=True,
-            verification_id=f"sim_{payload_hash}",
-            status="simulated",
-            message="The Tribunal link prepared (service offline - simulated response)",
-            tribunal_url=f"tribunal://verify/{payload_hash}"
         )
 
 

@@ -39,6 +39,11 @@ COST_PER_1M = {
 # Cache directory
 CACHE_DIR = Path(__file__).parent.parent / ".prompt_cache"
 
+# Index mapping Catalyze-generated prompts back to their cache entries.
+# This lets us detect when a user re-submits a previously generated prompt
+# and avoid returning a cached no-op result.
+PROMPT_INDEX_PATH = CACHE_DIR / "prompt_index.json"
+
 
 # ============================================================================
 # TOKEN COUNTING
@@ -113,6 +118,62 @@ def cache_path(idea_hash: str) -> Path:
     return CACHE_DIR / f"{idea_hash}.json"
 
 
+def _normalize_for_hash(text: str) -> str:
+    """Normalize text for stable hashing.
+
+    We normalize whitespace and case so that re-submitting the exact same prompt
+    (with minor whitespace differences) can still be detected.
+    """
+    import re
+
+    normalized = (text or "").strip()
+    normalized = re.sub(r"\s+", " ", normalized)
+    return normalized.lower()
+
+
+def get_prompt_hash(prompt_text: str) -> str:
+    """Generate a short hash for a prompt string (used for prompt-output index)."""
+    payload = _normalize_for_hash(prompt_text).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()[:16]
+
+
+def _load_prompt_index() -> Dict[str, Any]:
+    """Load the prompt index mapping prompt_hash -> {idea_hash, timestamp}."""
+    try:
+        if not PROMPT_INDEX_PATH.exists():
+            return {"version": "v1", "entries": {}}
+        with open(PROMPT_INDEX_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            return {"version": "v1", "entries": {}}
+        if data.get("version") != "v1" or not isinstance(data.get("entries"), dict):
+            return {"version": "v1", "entries": {}}
+        return data
+    except Exception:
+        return {"version": "v1", "entries": {}}
+
+
+def _save_prompt_index(index: Dict[str, Any]) -> None:
+    """Persist the prompt index."""
+    try:
+        CACHE_DIR.mkdir(exist_ok=True)
+        with open(PROMPT_INDEX_PATH, "w", encoding="utf-8") as f:
+            json.dump(index, f, indent=2)
+    except Exception:
+        # Index is best-effort; caching must still work without it.
+        return
+
+
+def lookup_generated_prompt(prompt_text: str) -> Optional[Dict[str, Any]]:
+    """Return prompt-index metadata if this looks like a Catalyze-generated prompt."""
+    p_hash = get_prompt_hash(prompt_text)
+    index = _load_prompt_index()
+    entry = (index.get("entries") or {}).get(p_hash)
+    if isinstance(entry, dict):
+        return entry
+    return None
+
+
 def load_from_cache(idea: str) -> Optional[Dict[str, Any]]:
     """Load cached result if it exists and is valid."""
     idea_hash = get_idea_hash(idea)
@@ -149,6 +210,22 @@ def save_to_cache(idea: str, result: Dict[str, Any]) -> None:
     try:
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(cached, f, indent=2)
+
+        # Best-effort: index the generated final prompt so we can detect
+        # when users re-submit Catalyze outputs for further improvement.
+        try:
+            final_prompt = ((result.get("final_synthesis") or {}).get("prompt") or "").strip()
+            if final_prompt:
+                p_hash = get_prompt_hash(final_prompt)
+                index = _load_prompt_index()
+                entries = index.setdefault("entries", {})
+                entries[p_hash] = {
+                    "idea_hash": idea_hash,
+                    "timestamp": cached.get("timestamp"),
+                }
+                _save_prompt_index(index)
+        except Exception:
+            pass
     except Exception as e:
         print(f"[WARN] Failed to save cache: {e}")
 
@@ -403,11 +480,52 @@ class TokenTracker:
             "model": result.get("model"),
             "input_tokens": result.get("input_tokens", 0),
             "output_tokens": result.get("output_tokens", 0),
-            "cost": result.get("cost", 0.0)
+            "cost": result.get("cost", 0.0),
+            "estimated": bool(result.get("estimated", False)),
         })
         self.total_input_tokens += result.get("input_tokens", 0)
         self.total_output_tokens += result.get("output_tokens", 0)
         self.total_cost += result.get("cost", 0.0)
+
+    def record_estimate(
+        self,
+        *,
+        stage: str,
+        model: str,
+        prompt: str,
+        max_tokens: int,
+        assumed_output_tokens: Optional[int] = None,
+        output_token_ratio: float = 0.5,
+        compress: bool = True,
+    ) -> None:
+        """Record an offline estimate for a call (no network/API).
+
+        This mirrors the pricing logic in `call_llm_v2()` as closely as possible:
+        - Counts input tokens on the (optionally) compressed prompt.
+        - Estimates output tokens using either an explicit assumption or a ratio.
+        - Computes cost using `calculate_cost()`.
+        """
+
+        effective_prompt = compress_prompt(prompt) if compress else (prompt or "")
+        input_tokens = count_tokens(effective_prompt, model)
+
+        if assumed_output_tokens is None:
+            assumed_output_tokens = int(max_tokens * output_token_ratio)
+
+        output_tokens = max(0, min(int(max_tokens), int(assumed_output_tokens)))
+        cost = calculate_cost(input_tokens, output_tokens, model)
+
+        self.record(
+            {
+                "model": model,
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "cost": cost,
+                "estimated": True,
+                "success": True,
+            },
+            stage,
+        )
     
     def summary(self) -> Dict[str, Any]:
         """Get usage summary."""

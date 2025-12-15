@@ -21,6 +21,8 @@ load_dotenv()
 
 from consensus_prompt_optimizer.orchestrator import PromptimaV2
 from consensus_prompt_optimizer.config import FREE_TIER_MONTHLY_LIMIT, PRO_TIER_MONTHLY_LIMIT
+from consensus_prompt_optimizer.schemas import SuccessSpec
+from consensus_prompt_optimizer.tribunal_service import get_tribunal_service
 from auth import AuthService, UsageService, get_stripe_service
 
 # ============================================================================
@@ -234,7 +236,12 @@ class OptimizeRequest(BaseModel):
 
 
 @app.post("/api/optimize")
-async def optimize(request: OptimizeRequest):
+async def optimize(
+    request: OptimizeRequest,
+    x_user_tier: Optional[str] = Header(None, alias="X-User-Tier"),
+    x_tribunal_callback_url: Optional[str] = Header(None, alias="X-Tribunal-Callback-Url"),
+    x_tribunal_callback_token: Optional[str] = Header(None, alias="X-Tribunal-Callback-Token"),
+):
     """
     Non-streaming optimization endpoint.
     Returns the complete result after processing.
@@ -242,9 +249,65 @@ async def optimize(request: OptimizeRequest):
     try:
         optimizer = PromptimaV2(use_cache=request.use_cache, dry_run=False)
         result = optimizer.run(request.idea)
+
+        def _tribunal_job(*, status: str, message: str, run_id: Optional[str] = None, verdicts_url: Optional[str] = None, success: bool = False, project_id: Optional[str] = None):
+            # Stable job object for clients:
+            # Always includes {run_id, status, verdicts_url}.
+            return {
+                "run_id": run_id,
+                "status": status,
+                "verdicts_url": verdicts_url,
+                "success": success,
+                "project_id": project_id,
+                "message": message,
+            }
+
+        tribunal_enabled = os.getenv("TRIBUNAL_ENABLED", "true").strip().lower() in ("1", "true", "yes", "on")
+        user_tier = (x_user_tier or "free").strip().lower()
+
+        tribunal = _tribunal_job(
+            status="disabled" if not tribunal_enabled else "skipped",
+            message=(
+                "The Tribunal is disabled (set TRIBUNAL_ENABLED=true to enable)."
+                if not tribunal_enabled
+                else "The Tribunal was not triggered for this request."
+            ),
+        )
+
+        if tribunal_enabled and user_tier in ("synapse", "pro", "enterprise", "admin"):
+            try:
+                ss = SuccessSpec.model_validate(result.get("success_spec") or {})
+                optimized_prompt = (result.get("final_synthesis") or {}).get("prompt") or ""
+                tribunal_resp = await get_tribunal_service().submit_for_verification_async(
+                    success_spec=ss,
+                    optimized_prompt=optimized_prompt,
+                    original_idea=request.idea,
+                    user_tier=user_tier,
+                    callback_url=x_tribunal_callback_url,
+                    callback_bearer_token=x_tribunal_callback_token,
+                )
+                tribunal = _tribunal_job(
+                    status=tribunal_resp.status,
+                    message=tribunal_resp.message,
+                    run_id=tribunal_resp.run_id,
+                    verdicts_url=tribunal_resp.verdicts_url,
+                    success=tribunal_resp.success,
+                    project_id=tribunal_resp.project_id,
+                )
+            except Exception as e:
+                tribunal = _tribunal_job(
+                    status="error",
+                    message=f"Tribunal submission failed: {str(e)}",
+                )
+        elif tribunal_enabled and user_tier not in ("synapse", "pro", "enterprise", "admin"):
+            tribunal = _tribunal_job(
+                status="skipped_tier",
+                message=f"The Tribunal requires synapse/pro/enterprise/admin tier (got: {user_tier}).",
+            )
         return {
             "success": True,
-            "result": result
+            "result": result,
+            "tribunal": tribunal,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

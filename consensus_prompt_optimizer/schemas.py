@@ -114,31 +114,61 @@ class SynthesizerOutput(BaseModel):
 # ============================================================================
 # SUCCESS SPEC - INTENT PRESERVATION (The Tribunal Integration)
 # ============================================================================
-class SuccessSpec(BaseModel):
-    """
-    Success Specification for Intent Preservation.
-    This artifact is passed to The Tribunal for verification.
-    
-    Generated alongside the optimized prompt to ensure the original
-    intent is preserved and can be validated downstream.
-    """
-    intent_summary: str = Field(
-        description="Concise summary of the user's original intent (1-2 sentences)"
-    )
-    key_constraints: List[str] = Field(
-        default_factory=list,
-        description="Critical constraints that must be satisfied by any output"
-    )
-    expected_behavior: str = Field(
-        description="Description of what successful prompt execution looks like"
-    )
-    
-    @field_validator('intent_summary', 'expected_behavior')
-    @classmethod
-    def not_empty(cls, v: str) -> str:
-        if not v or not v.strip():
-            raise ValueError("Field cannot be empty")
-        return v.strip()
+try:
+    # Phase 2B: Prefer shared contract model to prevent schema drift.
+    from catalyze_contract import SuccessSpec as _ContractSuccessSpec  # type: ignore
+except Exception:
+    _ContractSuccessSpec = None
+
+
+if _ContractSuccessSpec is not None:
+    class SuccessSpec(_ContractSuccessSpec):
+        """Promptly's SuccessSpec.
+
+        Uses the shared contract schema as a base, but keeps Promptly's stricter
+        requirements for internal generation and API validation.
+        """
+
+        # Override optional contract fields to required for Promptly.
+        intent_summary: str = Field(
+            description="Concise summary of the user's original intent (1-2 sentences)"
+        )
+        expected_behavior: str = Field(
+            description="Description of what successful prompt execution looks like"
+        )
+
+        @field_validator('intent_summary', 'expected_behavior')
+        @classmethod
+        def not_empty(cls, v: str) -> str:
+            if not v or not v.strip():
+                raise ValueError("Field cannot be empty")
+            return v.strip()
+else:
+    class SuccessSpec(BaseModel):
+        """
+        Success Specification for Intent Preservation.
+        This artifact is passed to The Tribunal for verification.
+        
+        Generated alongside the optimized prompt to ensure the original
+        intent is preserved and can be validated downstream.
+        """
+        intent_summary: str = Field(
+            description="Concise summary of the user's original intent (1-2 sentences)"
+        )
+        key_constraints: List[str] = Field(
+            default_factory=list,
+            description="Critical constraints that must be satisfied by any output"
+        )
+        expected_behavior: str = Field(
+            description="Description of what successful prompt execution looks like"
+        )
+        
+        @field_validator('intent_summary', 'expected_behavior')
+        @classmethod
+        def not_empty(cls, v: str) -> str:
+            if not v or not v.strip():
+                raise ValueError("Field cannot be empty")
+            return v.strip()
 
 
 # ============================================================================

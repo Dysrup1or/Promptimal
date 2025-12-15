@@ -144,7 +144,7 @@ export default function PromptOptimizer({ onOptimized, selectedHistory }: Prompt
       <div className="relative z-10 w-full max-w-2xl text-center space-y-8">
         {/* Title */}
         <h1 className="font-clash font-bold text-[64px] md:text-[96px] lg:text-[120px] leading-[0.9] tracking-tight text-electric-cyan uppercase drop-shadow-[0_0_30px_rgba(0,240,255,0.4)]">
-          PROMPTLY
+          CATALYZE
         </h1>
 
         {/* Textarea */}
